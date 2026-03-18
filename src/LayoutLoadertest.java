@@ -9,7 +9,7 @@ public class LayoutLoadertest {
     @Test
     void testGeldigeLayoutLaden() throws Exception {
         // Arrange
-        String pad = "layouts/hotel1.layout";
+        String pad = "layouts/hotel1.json";
 
         // Act
         Hotel hotel = LayoutLoader.laadLayout(pad);
@@ -37,7 +37,7 @@ public class LayoutLoadertest {
         String[][] grid = {
                 {"G", "K", "K"},
                 {"G", "F", "K"},
-                {"T", "G", "G"}  // geen L
+                {"T", "G", "G"}
         };
 
         // Act + Assert
@@ -53,7 +53,7 @@ public class LayoutLoadertest {
         String[][] grid = {
                 {"L", "K", "K"},
                 {"G", "G", "K"},
-                {"T", "G", "G"}  // geen F
+                {"T", "G", "G"}
         };
 
         // Act + Assert
@@ -69,7 +69,7 @@ public class LayoutLoadertest {
         String[][] grid = {
                 {"L", "K", "K"},
                 {"G", "F", "K"},
-                {"G", "G", "G"}  // geen T
+                {"G", "G", "G"}
         };
 
         // Act + Assert

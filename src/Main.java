@@ -59,8 +59,9 @@ public class Main {
 
     // US1.2: Laad alle beschikbare layout bestanden
     private static String[] getAvailableLayouts() {
+        System.out.println("Zoek layouts in: " + new File("layouts").getAbsolutePath());
         File layoutDir = new File("layouts");
-        String[] layouts = layoutDir.list((dir, name) -> name.endsWith(".layout"));
+        String[] layouts = layoutDir.list((dir, name) -> name.endsWith(".json"));
         if (layouts == null || layouts.length == 0) {
             throw new RuntimeException("Geen layout bestanden gevonden in layouts/ map");
         }
