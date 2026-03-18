@@ -1,5 +1,8 @@
-L,G,G,G,G
-G,K,K,K,G
-G,K,F,K,G
-G,K,K,K,G
-T,G,G,G,G
+K,K,G,K,K,G,K,K,G,K,K,K
+K,K,G,K,K,G,K,K,G,K,K,K
+G,G,G,G,G,G,G,G,G,G,G,G
+B,B,G,FT,FT,G,R,R,G,K,K,K
+B,B,G,FT,FT,G,R,R,G,K,K,K
+G,G,G,G,G,G,G,G,G,G,G,G
+F,G,G,G,G,G,G,G,G,G,G,T
+L,L,L,L,L,L,L,L,L,L,L,L
