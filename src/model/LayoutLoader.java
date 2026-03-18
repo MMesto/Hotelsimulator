@@ -29,7 +29,7 @@ public class LayoutLoader {
 
 
     }
-    private static void valideerLayout(String[][] grid) throws Exception {
+    public static void valideerLayout(String[][] grid) throws Exception {
         boolean heeftLobby = false;
         boolean heeftLift = false;
         boolean heeftTrap = false;
