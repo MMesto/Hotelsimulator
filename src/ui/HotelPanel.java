@@ -11,6 +11,17 @@ public class HotelPanel extends JPanel {
 
     public HotelPanel(Hotel hotel) {
         this.hotel = hotel;
+        updateDimensions();
+    }
+
+    // Methode om het hotel te wijzigen (voor layout wisseling)
+    public void setHotel(Hotel hotel) {
+        this.hotel = hotel;
+        updateDimensions();
+        repaint();
+    }
+
+    private void updateDimensions() {
         int breedte = hotel.getBreedte() * VAKJE_GROOTTE;
         int hoogte = hotel.getHoogte() * VAKJE_GROOTTE;
         this.setPreferredSize(new Dimension(breedte, hoogte));
