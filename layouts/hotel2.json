@@ -1,5 +1,10 @@
 [
   {
+    "AreaType": "Lobby",
+    "Position": "5, 1",
+    "Dimension": "3, 2"
+  },
+  {
     "AreaType": "Lift",
     "Position": "1, 9",
     "Dimension": "1, 1"
@@ -10,6 +15,11 @@
     "Dimension": "1, 1"
   },
   {
+    "AreaType": "Storage",
+    "Position": "9, 1",
+    "Dimension": "1, 2"
+  },
+  {
     "Classification": "1 Star",
     "AreaType": "Room",
     "Position": "1, 1",
@@ -18,25 +28,7 @@
   {
     "Classification": "1 Star",
     "AreaType": "Room",
-    "Position": "3, 1",
-    "Dimension": "1, 1"
-  },
-  {
-    "Classification": "1 Star",
-    "AreaType": "Room",
-    "Position": "5, 1",
-    "Dimension": "1, 1"
-  },
-  {
-    "Classification": "1 Star",
-    "AreaType": "Room",
-    "Position": "7, 1",
-    "Dimension": "1, 1"
-  },
-  {
-    "Classification": "1 Star",
-    "AreaType": "Room",
-    "Position": "9, 1",
+    "Position": "1, 2",
     "Dimension": "1, 1"
   },
   {
@@ -46,27 +38,33 @@
     "Dimension": "1, 1"
   },
   {
+    "Classification": "1 Star",
+    "AreaType": "Room",
+    "Position": "11, 2",
+    "Dimension": "1, 1"
+  },
+  {
     "Classification": "2 Star",
     "AreaType": "Room",
-    "Position": "1, 3",
+    "Position": "1, 4",
     "Dimension": "2, 1"
   },
   {
     "Classification": "2 Star",
     "AreaType": "Room",
-    "Position": "4, 3",
+    "Position": "4, 4",
     "Dimension": "2, 1"
   },
   {
     "Classification": "2 Star",
     "AreaType": "Room",
-    "Position": "7, 3",
+    "Position": "7, 4",
     "Dimension": "2, 1"
   },
   {
     "Classification": "2 Star",
     "AreaType": "Room",
-    "Position": "10, 3",
+    "Position": "10, 4",
     "Dimension": "2, 1"
   },
   {

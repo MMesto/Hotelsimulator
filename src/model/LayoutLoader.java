@@ -46,7 +46,7 @@ public class LayoutLoader {
                 }
             }
         }
-
+        valideerLayout(grid);
         return new Hotel(grid, maxX, maxY, areas);
     }
 
@@ -58,8 +58,8 @@ public class LayoutLoader {
             case "Restaurant": return "R";
             case "Fitness": return "FT";
             case "Lobby": return "L";
-            case "Lift": return "Lift";
-            case "Staircase": return "Trap";
+            case "Lift": return "F";
+            case "Staircase": return "T";
             case "Storage": return "S";
             default: return "?";
         }
