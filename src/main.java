@@ -1,67 +1,78 @@
 import model.Hotel;
 import model.LayoutLoader;
 import ui.HotelPanel;
+import model.Simulator;
+
 import javax.swing.*;
 import java.io.File;
 import java.util.Arrays;
 
-/**
- * Startpunt van de Hotel Simulator applicatie.
- * Maakt het hoofdvenster aan en beheert het wisselen tussen layouts.
- */
-public class Main {
+public class main {
 
-    // Het paneel waarop het hotel visueel wordt weergegeven
     private static HotelPanel hotelPanel;
-
-    // Dropdown menu met beschikbare layout bestanden
     private static JComboBox<String> layoutDropdown;
-
-    // Label dat de huidige status weergeeft
     private static JLabel statusLabel;
+    private static Simulator simulator;
 
-    /**
-     * Startmethode van de applicatie.
-     * Bouwt de GUI op en laadt de eerste beschikbare layout.
-     */
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> {
             try {
-                // Maak het hoofdvenster aan
                 JFrame frame = new JFrame("Hotel Simulator");
                 frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
-                // Bovenpaneel met bedieningselementen
                 JPanel controlPanel = new JPanel();
                 controlPanel.add(new JLabel("Selecteer layout: "));
 
-                // Vul de dropdown met beschikbare JSON layouts
+                // layouts ophalen
                 String[] layouts = getAvailableLayouts();
+
                 layoutDropdown = new JComboBox<>(layouts);
                 controlPanel.add(layoutDropdown);
 
-                // Knop om de geselecteerde layout in te laden
+                // load knop
                 JButton loadButton = new JButton("Laden");
                 loadButton.addActionListener(e -> loadLayout());
                 controlPanel.add(loadButton);
 
-                // Statuslabel toont welke layout actief is
+                // pause knop
+                JButton pauseButton = new JButton("Pause");
+                controlPanel.add(pauseButton);
+
+                pauseButton.addActionListener(e -> {
+                    if (simulator.isRunning()) {
+                        simulator.pause();
+                        pauseButton.setText("Resume");
+                        statusLabel.setText("Simulatie gepauzeerd");
+                    } else {
+                        simulator.start();
+                        pauseButton.setText("Pause");
+                        statusLabel.setText("Simulatie actief");
+                    }
+                });
+
+                // status label
                 statusLabel = new JLabel("Hotel laden...");
                 controlPanel.add(statusLabel);
 
-                // Laad de eerste layout bij opstarten
+                // eerste layout laden
                 Hotel hotel = LayoutLoader.laadLayout("layouts/" + layouts[0]);
                 hotelPanel = new HotelPanel(hotel);
+
+                // 🔥 simulator hier maken (BELANGRIJK)
+                simulator = new Simulator(hotelPanel);
+                simulator.start();
+
                 statusLabel.setText("Hotel geladen: " + layouts[0]);
 
-                // Voeg panelen toe aan het venster
                 frame.add(controlPanel, "North");
                 frame.add(hotelPanel, "Center");
 
-                // Centreer het venster op het scherm
                 frame.pack();
                 frame.setLocationRelativeTo(null);
                 frame.setVisible(true);
+
+                // 🔥 HTE ticks
+                new Timer(500, e -> simulator.tick()).start();
 
             } catch (Exception e) {
                 System.out.println("Fout: " + e.getMessage());
@@ -70,41 +81,33 @@ public class Main {
         });
     }
 
-    /**
-     * Zoekt alle JSON layoutbestanden in de layouts/ map.
-     * Gooit een fout als er geen bestanden gevonden worden.
-     */
     private static String[] getAvailableLayouts() {
         File layoutDir = new File("layouts");
         String[] layouts = layoutDir.list((dir, name) -> name.endsWith(".json"));
 
-        // Controleer of er layouts gevonden zijn
         if (layouts == null || layouts.length == 0) {
-            throw new RuntimeException("Geen layout bestanden gevonden in layouts/ map");
+            throw new RuntimeException("Geen layout bestanden gevonden");
         }
 
-        // Sorteer alfabetisch zodat de volgorde consistent is
         Arrays.sort(layouts);
         return layouts;
     }
 
-    /**
-     * Laadt de layout die geselecteerd is in de dropdown.
-     * Vervangt het huidige hotel zonder de applicatie te herstarten.
-     */
     private static void loadLayout() {
         try {
             String selectedLayout = (String) layoutDropdown.getSelectedItem();
 
-            // Laad het nieuwe hotel en update het paneel
             Hotel newHotel = LayoutLoader.laadLayout("layouts/" + selectedLayout);
             hotelPanel.setHotel(newHotel);
+
+            // 🔥 simulator resetten
+            simulator = new Simulator(hotelPanel);
+            simulator.start();
+
             statusLabel.setText("Hotel geladen: " + selectedLayout);
 
         } catch (Exception e) {
-            // Toon foutmelding in het statuslabel
             statusLabel.setText("Fout: " + e.getMessage());
-            System.out.println("Fout bij laden: " + e.getMessage());
         }
     }
 }

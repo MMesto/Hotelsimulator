@@ -107,4 +107,5 @@ public class LayoutLoader {
         if (!heeftLift) throw new Exception("Layout mist een lift!");
         if (!heeftTrap) throw new Exception("Layout mist een trap!");
     }
+
 }
