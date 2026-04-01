@@ -1,0 +1,75 @@
+[
+  {
+    "AreaType": "Lobby",
+    "Position": "1, 1",
+    "Dimension": "16, 2"
+  },
+  {
+    "AreaType": "Staircase",
+    "Position": "15, 3",
+    "Dimension": "2, 9"
+  },
+  {
+    "AreaType": "Lift", "Position": "13, 3", "Dimension": "2, 2"
+  },
+  {
+    "AreaType": "Lift", "Position": "13, 5", "Dimension": "2, 2"
+  },
+  {
+    "AreaType": "Lift", "Position": "13, 7", "Dimension": "2, 2"
+  },
+  {
+    "AreaType": "Lift", "Position": "13, 9", "Dimension": "2, 3"
+  },
+  {
+    "AreaType": "Room", "Classification": "1 Star", "Position": "1, 3", "Dimension": "1, 1"
+  },
+  {
+    "AreaType": "Room", "Classification": "1 Star", "Position": "2, 3", "Dimension": "1, 1"
+  },
+  {
+    "AreaType": "Room", "Classification": "1 Star", "Position": "3, 3", "Dimension": "1, 1"
+  },
+  {
+    "AreaType": "Room", "Classification": "2 Star", "Position": "4, 3", "Dimension": "2, 1"
+  },
+  {
+    "AreaType": "Room", "Classification": "2 Star", "Position": "6, 3", "Dimension": "2, 1"
+  },
+  {
+    "AreaType": "Restaurant", "Position": "8, 3", "Dimension": "5, 2"
+  },
+  {
+    "AreaType": "Room", "Classification": "3 Star", "Position": "1, 4", "Dimension": "3, 1"
+  },
+  {
+    "AreaType": "Room", "Classification": "3 Star", "Position": "4, 4", "Dimension": "4, 1"
+  },
+  {
+    "AreaType": "Room", "Classification": "4 Star", "Position": "1, 5", "Dimension": "4, 2"
+  },
+  {
+    "AreaType": "Room", "Classification": "4 Star", "Position": "5, 5", "Dimension": "4, 2"
+  },
+  {
+    "AreaType": "Fitness", "Position": "9, 5", "Dimension": "4, 2"
+  },
+  {
+    "AreaType": "Cinema", "Position": "1, 7", "Dimension": "6, 3"
+  },
+  {
+    "AreaType": "Room", "Classification": "4 Star", "Position": "7, 7", "Dimension": "6, 2"
+  },
+  {
+    "AreaType": "Room", "Classification": "3 Star", "Position": "7, 9", "Dimension": "6, 1"
+  },
+  {
+    "AreaType": "Room", "Classification": "5 Star", "Position": "1, 10", "Dimension": "4, 2"
+  },
+  {
+    "AreaType": "Room", "Classification": "5 Star", "Position": "5, 10", "Dimension": "4, 2"
+  },
+  {
+    "AreaType": "Room", "Classification": "5 Star", "Position": "9, 10", "Dimension": "4, 2"
+  }
+]

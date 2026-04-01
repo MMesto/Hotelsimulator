@@ -17,7 +17,7 @@ public class HotelPanel extends JPanel {
 
     private final int VAKJE_GROOTTE = 50;
 
-    // 🔥 NIEUW: status van simulatie (optioneel)
+    // status van simulatie (optioneel)
     private boolean running = true;
 
     public HotelPanel(Hotel hotel) {
@@ -31,7 +31,7 @@ public class HotelPanel extends JPanel {
         repaint();
     }
 
-    // 🔥 NIEUW: Simulator kan dit gebruiken
+    // Simulator kan dit gebruiken
     public void setRunning(boolean running) {
         this.running = running;
     }
@@ -42,7 +42,7 @@ public class HotelPanel extends JPanel {
         int breedte = hotel.getBreedte() * VAKJE_GROOTTE;
         int hoogte = hotel.getHoogte() * VAKJE_GROOTTE;
         this.setPreferredSize(new Dimension(breedte, hoogte));
-        revalidate(); // 🔥 belangrijk voor UI refresh
+        revalidate(); // belangrijk voor UI refresh
     }
 
     @Override
@@ -96,7 +96,7 @@ public class HotelPanel extends JPanel {
             g.drawString(label, textX, textY);
         }
 
-        // 🔥 NIEUW: Teken alle personen
+        // Teken alle personen
         for (Persoon persoon : hotel.getPersonen()) {
             if (persoon instanceof Gast) {
                 Gast gast = (Gast) persoon;
@@ -122,7 +122,7 @@ public class HotelPanel extends JPanel {
             }
         }
 
-        // 🔥 NIEUW: toon status (pause/active)
+        // toon status (pause/active)
         if (!running) {
             g.setColor(new Color(0, 0, 0, 150));
             g.fillRect(0, 0, getWidth(), getHeight());
