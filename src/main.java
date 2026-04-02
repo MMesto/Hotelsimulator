@@ -35,37 +35,22 @@ public class main {
                 loadButton.addActionListener(e -> loadLayout());
                 controlPanel.add(loadButton);
 
-                // pause knop (declare first, configure later)
-                JButton pauseButton = new JButton("Pause");
-                pauseButton.setEnabled(false);
-
-                // Start knop
-                JButton startButton = new JButton("Start");
-                startButton.addActionListener(e -> {
+                // Start/Pause toggle knop (1 knop voor beide functies)
+                JButton startPauseButton = new JButton("Start");
+                startPauseButton.addActionListener(e -> {
                     if (!simulator.isRunning()) {
+                        // Start simulatie
                         simulator.start();
-                        startButton.setEnabled(false);
-                        pauseButton.setEnabled(true);
+                        startPauseButton.setText("Pause");
                         statusLabel.setText("Simulatie actief");
-                    }
-                });
-                controlPanel.add(startButton);
-
-                // Configure pause button
-                pauseButton.addActionListener(e -> {
-                    if (simulator.isRunning()) {
-                        simulator.pause();
-                        pauseButton.setText("Resume");
-                        startButton.setEnabled(true);
-                        statusLabel.setText("Simulatie gepauzeerd");
                     } else {
-                        simulator.start();
-                        pauseButton.setText("Pause");
-                        startButton.setEnabled(false);
-                        statusLabel.setText("Simulatie actief");
+                        // Pause simulatie
+                        simulator.pause();
+                        startPauseButton.setText("Resume");
+                        statusLabel.setText("Simulatie gepauzeerd");
                     }
                 });
-                controlPanel.add(pauseButton);
+                controlPanel.add(startPauseButton);
 
                 // status label
                 statusLabel = new JLabel("Hotel laden...");

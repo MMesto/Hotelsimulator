@@ -29,16 +29,16 @@ public class Simulator {
     }
 
     public void tick() {
-        if (!running) return;
-
-        // Update all personen (guests move according to their logic)
-        for (Persoon persoon : hotel.getPersonen()) {
-            if (persoon instanceof Gast) {
-                ((Gast) persoon).update();
+        if (running) {
+            // UPDATE FASE - Alleen als simulatie loopt
+            for (Persoon persoon : hotel.getPersonen()) {
+                if (persoon instanceof Gast) {
+                    ((Gast) persoon).update();
+                }
             }
         }
-
-        // 🔥 BELANGRIJK: dit triggert jouw paintComponent()
-        hotelPanel.repaint();
+        
+        // RENDER FASE - Altijd tekenen (ook wanneer pauzeerd!)
+        hotelPanel.repaint();  // ← Nu altijd, zodat PAUSED overlay verschijnt
     }
 }
