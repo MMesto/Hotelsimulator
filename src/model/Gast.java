@@ -4,92 +4,76 @@ import java.awt.Color;
 import java.util.Random;
 
 /**
- * Gast - subtype van Persoon
- * Heeft positie, bestemming en simpele AI movement
+ * Gast - een persoon in het hotel die zich beweegt op basis van HTE-ticks
  */
 public class Gast extends Persoon {
 
     private static final Random RANDOM = new Random();
 
-    // HUIDIGE POSITIE
-    private int x;
-    private int y;
+    private int x, y;           // huidige positie
+    private int destX, destY;   // bestemming
+    private int maxX, maxY;     // grenzen van het grid
+    private Color kleur;        // kleur voor UI
 
-    // DOEL POSITIE
-    private int destX;
-    private int destY;
-
-    // VISUELE KLEUR
-    private Color kleur;
-
-    // STATUS (bijv lobby, wandelen etc.)
-    private String status;
-
-    // GRID LIMIETEN
-    private int maxX = 10;
-    private int maxY = 10;
-
+    /**
+     * Constructor: startpositie meegeven
+     * @param naam naam van de gast
+     * @param startX startpositie X
+     * @param startY startpositie Y
+     */
     public Gast(String naam, int startX, int startY) {
-        super(naam, "Gast");
+        super(naam, "Gast"); // Roept Persoon constructor aan
 
         this.x = startX;
         this.y = startY;
 
-        this.kleur = generateRandomColor();
-        this.status = "in_lobby";
+        // Random bestemming binnen 10x10 grid (kan later aangepast worden)
+        this.destX = RANDOM.nextInt(10);
+        this.destY = RANDOM.nextInt(10);
 
-        // INIT FASE - eerste bestemming kiezen
-        chooseRandomDestination();
+        this.kleur = new Color(
+                RANDOM.nextInt(256),
+                RANDOM.nextInt(256),
+                RANDOM.nextInt(256)
+        );
     }
 
-    // RANDOM KLEUR GENEREREN
-    private static Color generateRandomColor() {
-        int r = 100 + RANDOM.nextInt(156);
-        int g = 100 + RANDOM.nextInt(156);
-        int b = 100 + RANDOM.nextInt(156);
-        return new Color(r, g, b);
+    /**
+     * Wordt aangeroepen bij elke tick
+     */
+    public void onTick() {
+        beweegStap();
+        // Output positie bij elke tick (debug / console)
+        System.out.println(getNaam() + " positie: (" + x + "," + y + ")");
     }
 
-    // NIEUWE BESTEMMING KIEZEN
-    private void chooseRandomDestination() {
-        this.destX = RANDOM.nextInt(this.maxX);
-        this.destY = RANDOM.nextInt(this.maxY);
+    /**
+     * Beweeg 1 stap richting doel
+     */
+    private void beweegStap() {
+        if (x < destX) x++;
+        else if (x > destX) x--;
+
+        if (y < destY) y++;
+        else if (y > destY) y--;
+
+        // Nieuwe bestemming kiezen als huidige bereikt
+        if (x == destX && y == destY) {
+            destX = RANDOM.nextInt(maxX);
+            destY = RANDOM.nextInt(maxY);
+        }
     }
 
-    // GRID GRENZEN INSTELLEN
+    /**
+     * Stel de grenzen van het grid in (zodat bestemming binnen hotel blijft)
+     */
     public void setGridBounds(int maxX, int maxY) {
         this.maxX = maxX;
         this.maxY = maxY;
     }
 
-    // GETTERS
+    // --- Getters voor UI of debugging ---
     public int getX() { return x; }
     public int getY() { return y; }
     public Color getKleur() { return kleur; }
-
-    // UPDATE FASE - beweging per tick
-    public void update() {
-
-        // ALS DOEL BEREIKT → NIEUW DOEL
-        if (this.x == this.destX && this.y == this.destY) {
-            chooseRandomDestination();
-        }
-
-        // BEWEGING RICHTING X
-        if (this.x < this.destX) x++;
-        else if (this.x > this.destX) x--;
-
-        // BEWEGING RICHTING Y
-        if (this.y < this.destY) y++;
-        else if (this.y > this.destY) y--;
-    }
-
-    @Override
-    public String toString() {
-        return "Gast{id=" + getId() +
-                ", naam='" + getNaam() +
-                "', pos=(" + x + "," + y + ")" +
-                ", dest=(" + destX + "," + destY + ")" +
-                ", status='" + status + "'}";
-    }
 }

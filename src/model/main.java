@@ -4,6 +4,7 @@ import model.Hotel;
 import model.LayoutLoader;
 import model.Simulator;
 import ui.HotelPanel;
+import model.Gast;
 
 import javax.swing.*;
 import java.io.File;
@@ -11,7 +12,6 @@ import java.util.Arrays;
 
 public class main {
 
-    // UI componenten (globaal zodat meerdere methodes ze kunnen gebruiken)
     private static HotelPanel hotelPanel;
     private static JComboBox<String> layoutDropdown;
     private static JLabel statusLabel;
@@ -20,72 +20,61 @@ public class main {
 
     public static void main(String[] args) {
 
-        // UI moet op de Swing thread draaien
         SwingUtilities.invokeLater(() -> {
             try {
                 JFrame frame = new JFrame("Hotel Simulator");
                 frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
-                // CONTROL PANEL - alle knoppen en interactie
+                // CONTROL PANEL
                 JPanel controlPanel = new JPanel();
                 controlPanel.add(new JLabel("Selecteer layout: "));
 
-                // Beschikbare layouts ophalen
+                // Layouts ophalen
                 String[] layouts = getAvailableLayouts();
-
-                // Dropdown voor layouts
                 layoutDropdown = new JComboBox<>(layouts);
                 controlPanel.add(layoutDropdown);
 
-                // LOAD BUTTON - laadt nieuwe layout
+                // LOAD BUTTON
                 JButton loadButton = new JButton("Laden");
                 loadButton.addActionListener(e -> loadLayout());
                 controlPanel.add(loadButton);
 
-                // START/PAUSE BUTTON - bestuurt simulatie
+                // START/PAUSE BUTTON
                 startPauseButton = new JButton("Start");
                 controlPanel.add(startPauseButton);
 
                 startPauseButton.addActionListener(e -> {
-
-                    // STATE CHECK - draait simulatie?
                     if (!simulator.isRunning()) {
-
-                        // START FASE
                         simulator.start();
                         startPauseButton.setText("Pause");
                         statusLabel.setText("Simulatie actief");
-
                     } else {
-
-                        // PAUSE FASE
                         simulator.pause();
                         startPauseButton.setText("Start");
                         statusLabel.setText("Simulatie gepauzeerd");
                     }
                 });
 
-                // Status label voor feedback
+                // Status label
                 statusLabel = new JLabel("Hotel laden...");
                 controlPanel.add(statusLabel);
 
                 // INIT FASE - eerste layout laden
                 Hotel hotel = LayoutLoader.laadLayout("layouts/" + layouts[0]);
 
-                // UI component makenn
+                // HotelPanel UI
                 hotelPanel = new HotelPanel(hotel);
 
+                // Voeg testgasten toe
+                addTestGuests(hotel);
 
-
-                // SIMULATOR INIT - koppelt logic aan UI
+                // SIMULATOR INIT
                 simulator = new Simulator(hotel, hotelPanel);
-
-                // START IN PAUSED STATE
-                simulator.pause();
+                simulator.pause(); // Start paused
 
                 statusLabel.setText("Hotel geladen: " + layouts[0] + " (Klik Start)");
 
-                // UI opbouwen
+                // UI toevoegen
                 frame.add(controlPanel, "North");
                 frame.add(hotelPanel, "Center");
 
@@ -93,12 +82,11 @@ public class main {
                 frame.setLocationRelativeTo(null);
                 frame.setVisible(true);
 
-                // HTE TICK LOOP - wordt elke 500ms uitgevoerd
+                // HTE-TICK TIMER (500ms)
                 new Timer(500, e -> {
-
-                    // UPDATE FASE - alleen als simulatie actief is
-                    simulator.tick();
-
+                    if (simulator.isRunning()) {
+                        simulator.tick();  // Tick alleen als simulatie actief
+                    }
                 }).start();
 
             } catch (Exception e) {
@@ -108,40 +96,33 @@ public class main {
         });
     }
 
-    // HAALT ALLE LAYOUT BESTANDEN OP
     private static String[] getAvailableLayouts() {
         File layoutDir = new File("layouts");
-
         String[] layouts = layoutDir.list((dir, name) -> name.endsWith(".json"));
-
         if (layouts == null || layouts.length == 0) {
             throw new RuntimeException("Geen layout bestanden gevonden");
         }
-
         Arrays.sort(layouts);
         return layouts;
     }
 
-    // LOAD NIEUWE LAYOUT
     private static void loadLayout() {
         try {
             String selectedLayout = (String) layoutDropdown.getSelectedItem();
-
-            // NIEUW HOTEL LADEN
             Hotel newHotel = LayoutLoader.laadLayout("layouts/" + selectedLayout);
 
-            // UI UPDATE
+            // UI update
             hotelPanel.setHotel(newHotel);
 
+            // Voeg testgasten toe
+            addTestGuests(newHotel);
 
-
-            // SIMULATOR RESET
+            // Simulator reset
             simulator = new Simulator(newHotel, hotelPanel);
             simulator.pause();
 
-            // UI RESET (BELANGRIJK!)
+            // Reset UI-knop
             startPauseButton.setText("Start");
-
             statusLabel.setText("Hotel geladen: " + selectedLayout + " (Klik Start)");
 
         } catch (Exception e) {
@@ -149,5 +130,18 @@ public class main {
         }
     }
 
+    private static void addTestGuests(Hotel hotel) {
+        // Testgasten toevoegen
+        Gast gast1 = new Gast("Alice", 2, 2);
+        gast1.setGridBounds(hotel.getBreedte(), hotel.getHoogte());
+        hotel.addPersoon(gast1);
 
+        Gast gast2 = new Gast("Bob", 3, 3);
+        gast2.setGridBounds(hotel.getBreedte(), hotel.getHoogte());
+        hotel.addPersoon(gast2);
+
+        Gast gast3 = new Gast("Charlie", 1, 1);
+        gast3.setGridBounds(hotel.getBreedte(), hotel.getHoogte());
+        hotel.addPersoon(gast3);
+    }
 }

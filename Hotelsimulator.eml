@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component inherit-compiler-output="true" inheritJdk="true">
+	<output-test url="file://$MODULE_DIR$/out/test/Hotelsimulator"/>
+	<exclude-output/>
+	<contentEntry url="file://$MODULE_DIR$"/>
+	<levels>
+		<level name="HotelEventsObs" value="project"/>
+		<level name="junit.jupiter" value="project"/>
+		<level name="google.code.gson" value="project"/>
+	</levels>
+</component>

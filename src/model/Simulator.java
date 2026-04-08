@@ -1,14 +1,19 @@
 package model;
 
+import model.SimulationClock;
 import ui.HotelPanel;
 
+/**
+ * Simulator - Stuurt de simulatie aan via HTE-ticks
+ */
 public class Simulator {
 
     private boolean running;
     private HotelPanel hotelPanel;
     private Hotel hotel;
     private SimulationClock clock;
-    private static final long TICK_INTERVAL = 100; // 100 ms tussen ticks
+
+    private static final long TICK_INTERVAL = 100; // 100 ms
 
     public Simulator(Hotel hotel, HotelPanel hotelPanel) {
         this.hotel = hotel;
@@ -19,7 +24,7 @@ public class Simulator {
 
     public void start() {
         running = true;
-        clock.start();
+        clock.start(); // start interne tijdmeting
         hotelPanel.setRunning(true);
     }
 
@@ -32,35 +37,34 @@ public class Simulator {
     public boolean isRunning() {
         return running;
     }
-    
-    /**
-     * Haal de simulatieklok op.
-     */
+
     public SimulationClock getClock() {
         return clock;
     }
-    
-    /**
-     * Reset de klok (gebruikt bij het laden van een nieuwe layout).
-     */
+
     public void resetClock() {
         clock.reset();
     }
 
+    /**
+     * HOOFDMETHODE: Wordt aangeroepen door Timer in main
+     */
     public void tick() {
-        // Controleer of de klok een tick moet doen
-        if (clock.tick()) {
-            // UPDATE FASE - Alleen als klok tick doet
-            if (running) {
-                for (Persoon persoon : hotel.getPersonen()) {
-                    if (persoon instanceof Gast) {
-                        ((Gast) persoon).update();
-                    }
-                }
+
+        // Check of er een echte HTE-tick plaatsvindt
+        if (running && clock.tick()) {
+
+            // Elke persoon handelt zijn eigen gedrag af
+            for (Persoon persoon : hotel.getPersonen()) {
+                persoon.onTick(); // ✅ vervang notify() door onTick()
             }
+
+            // Later uitbreiden:
+            // for (Lift lift : hotel.getLiften()) lift.onTick();
+            // for (Event event : hotel.getEvents()) event.onTick();
         }
-        
-        // RENDER FASE - Altijd tekenen (ook wanneer pauzeerd!)
+
+        // UI altijd updaten (ook bij pauze)
         hotelPanel.repaint();
     }
 }

@@ -1,6 +1,5 @@
 import model.Hotel;
 import model.LayoutLoader;
-import model.Gast;
 import ui.HotelPanel;
 import model.Simulator;
 
