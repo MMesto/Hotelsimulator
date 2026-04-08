@@ -72,7 +72,7 @@ public class main {
                 // INIT FASE - eerste layout laden
                 Hotel hotel = LayoutLoader.laadLayout("layouts/" + layouts[0]);
 
-                // UI component maken
+                // UI component makenn
                 hotelPanel = new HotelPanel(hotel);
 
 
