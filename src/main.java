@@ -13,6 +13,7 @@ public class main {
     private static JComboBox<String> layoutDropdown;
     private static JLabel statusLabel;
     private static JLabel timestepLabel;
+    private static JButton startPauseButton;
     private static Simulator simulator;
 
     public static void main(String[] args) {
@@ -120,6 +121,9 @@ public class main {
             simulator = new Simulator(newHotel, hotelPanel);
             simulator.resetClock();
             simulator.pause();
+
+            // 🔥 Reset knop naar "Start" (was misschien "Resume" of "Pause")
+            startPauseButton.setText("Start");
 
             statusLabel.setText("Hotel geladen: " + selectedLayout + " (Klik 'Start' om de simulatie te beginnen)");
 
