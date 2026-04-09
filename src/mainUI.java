@@ -191,6 +191,9 @@ public class mainUI {
     }
 
     /**
+     *
+     *
+     *
      * addTestGuests:
      * Omdat we nog geen reserveringssysteem hebben, voegen we handmatig
      * drie Gast-objecten toe aan de lijst met personen in het Hotel.
