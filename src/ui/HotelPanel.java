@@ -52,23 +52,21 @@ public class HotelPanel extends JPanel {
         if (hotel == null) return;
 
         // Achtergrond (vloer)
-        g.setColor(new Color(220, 220, 220));
-        g.fillRect(0, 0, hotel.getBreedte() * VAKJE_GROOTTE, hotel.getHoogte() * VAKJE_GROOTTE);
+        g.setColor(Color.WHITE);
+        g.fillRect(0, 0, getWidth(), getHeight());
 
-        // Grid tekenen
-        g.setColor(new Color(200, 200, 200));
-        for (int y = 0; y < hotel.getHoogte(); y++) {
-            for (int x = 0; x < hotel.getBreedte(); x++) {
-                g.drawRect(x * VAKJE_GROOTTE, y * VAKJE_GROOTTE, VAKJE_GROOTTE, VAKJE_GROOTTE);
-            }
-        }
+        // Bereken offsets om hotel in het midden te centreren
+        int hotelBreedte = hotel.getBreedte() * VAKJE_GROOTTE;
+        int hotelHoogte = hotel.getHoogte() * VAKJE_GROOTTE;
+        int offsetX = (getWidth() - hotelBreedte) / 2;
+        int offsetY = (getHeight() - hotelHoogte) / 2;
 
         // Areas tekenen
         List<Area> areas = hotel.getAreas();
         for (Area area : areas) {
 
-            int x = (area.getX() - 1) * VAKJE_GROOTTE;
-            int y = (area.getY() - 1) * VAKJE_GROOTTE;
+            int x = (area.getX() - 1) * VAKJE_GROOTTE + offsetX;
+            int y = (area.getY() - 1) * VAKJE_GROOTTE + offsetY;
 
             int breedte = area.getBreedte() * VAKJE_GROOTTE;
             int hoogte = area.getHoogte() * VAKJE_GROOTTE;
@@ -100,8 +98,9 @@ public class HotelPanel extends JPanel {
         for (Persoon persoon : hotel.getPersonen()) {
             if (persoon instanceof Gast) {
                 Gast gast = (Gast) persoon;
-                int px = gast.getX() * VAKJE_GROOTTE + VAKJE_GROOTTE / 2 - 8;
-                int py = gast.getY() * VAKJE_GROOTTE + VAKJE_GROOTTE / 2 - 8;
+                // Gebruik doubles voor smooth pixel-gebaseerde coördinaten
+                int px = (int)(gast.getX() * VAKJE_GROOTTE) + offsetX - 8;
+                int py = (int)(gast.getY() * VAKJE_GROOTTE) + offsetY - 8;
 
                 // Teken met gast's eigen kleur
                 g.setColor(gast.getKleur());

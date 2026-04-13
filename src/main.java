@@ -198,16 +198,19 @@ public class main {
     private static void addTestGuests(Hotel hotel) {
         // Maak Alice aan op positie (2,2)
         Gast gast1 = new Gast("Alice", 2, 2);
-        gast1.setGridBounds(hotel.getBreedte(), hotel.getHoogte()); // Zorg dat ze niet buiten de muren loopt
+        gast1.setGridBounds(hotel.getBreedte(), hotel.getHoogte());
+        gast1.setHotel(hotel);  // Geef gast de hotel areas
         hotel.addPersoon(gast1);
 
         // Doe hetzelfde voor Bob en Charlie
         Gast gast2 = new Gast("Bob", 3, 3);
         gast2.setGridBounds(hotel.getBreedte(), hotel.getHoogte());
+        gast2.setHotel(hotel);
         hotel.addPersoon(gast2);
 
         Gast gast3 = new Gast("Charlie", 1, 1);
         gast3.setGridBounds(hotel.getBreedte(), hotel.getHoogte());
+        gast3.setHotel(hotel);
         hotel.addPersoon(gast3);
     }
 }
