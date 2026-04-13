@@ -12,7 +12,7 @@ import java.util.Arrays;
  * De MainUI klasse is het startpunt van de applicatie.
  * Het regelt de GUI (Swing), de interactie met de gebruiker en de aansturing van de simulator.
  */
-public class mainUI {
+public class main {
 
     // --- VARIABELEN (State) ---
     private static HotelPanel hotelPanel;      // Het canvas waarop het hotel getekend wordt
