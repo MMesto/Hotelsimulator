@@ -10,6 +10,8 @@ public class SchoonmakerNormalStrategy implements IMovementStrategy {
 
     @Override
     public void beweeg(Persoon persoon, MovementData data) {
+        // Requirement: Schoonmaakproces.
+        // De schoonmaker zoekt kamers met status SCHOONMAKEN en loopt daarheen.
         if (!(persoon instanceof Schoonmaker)) return;
         Schoonmaker sm = (Schoonmaker) persoon;
 
@@ -81,6 +83,8 @@ public class SchoonmakerNormalStrategy implements IMovementStrategy {
     }
 
     private void werkAanKamer(Schoonmaker sm) {
+        // Requirement: Schoonmaakproces.
+        // De schoonmaaktimer loopt af; daarna wordt de kamer weer VRIJ.
         sm.setSchoonmaakTimer(sm.getSchoonmaakTimer() - 1);
         if (sm.getSchoonmaakTimer() <= 0) {
             sm.getHuidigKamer().setStatus(Kamer.KamerStatus.VRIJ);

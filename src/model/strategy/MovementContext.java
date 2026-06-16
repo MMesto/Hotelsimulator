@@ -29,6 +29,8 @@ public class MovementContext {
     } // Einde setStrategies.
 
     public void beweeg(Persoon persoon, MovementData data) { // Enige methode waarmee de context beweging uitvoert.
+        // Requirement: Bewegingssysteem.
+        // De context voert de actieve strategy uit: normaal bewegen of evacueren.
         if (currentStrategy != null) { // Controleer of er een actieve strategy is.
             currentStrategy.beweeg(persoon, data); // Polymorfisme: Java kiest de juiste concrete beweeg-methode.
         }

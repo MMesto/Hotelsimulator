@@ -14,6 +14,8 @@ public class EvacuationMovement implements IMovementStrategy {
 
     @Override
     public void beweeg(Persoon persoon, MovementData data) {
+        // Requirement: Lift- en/of traplogica.
+        // Bij evacuatie wordt de lift genegeerd en loopt iedereen via de trap naar buiten.
         double pX = persoon.getX();
         double pY = persoon.getY();
 

@@ -231,9 +231,9 @@ public class Gast extends Persoon {
         }
 
         switch (state) {
-            case WANDELEN -> setHuidigeActiviteit(huidigKamer != null ? "🛏️ In kamer" : (loungeStayTicks >= LOUNGE_CHILL_TICKS ? "🛋️ Chill" : "🚶 Wandel"));
-            case NAAR_LIFT_WACHTEN -> setHuidigeActiviteit("⏳ Wacht Lift");
-            case WACHTEN_OP_VERVOER -> setHuidigeActiviteit("⏳ Wachten op lift");
+            case WANDELEN -> setHuidigeActiviteit(staatInHuidigeKamer() ? "🛏️ In kamer" : (loungeStayTicks >= LOUNGE_CHILL_TICKS ? "🛋️ Chill" : "🚶 Wandel"));
+            case NAAR_LIFT_WACHTEN -> setHuidigeActiviteit(usesTrap ? "⏳ Naar trap" : "⏳ Naar lift");
+            case WACHTEN_OP_VERVOER -> setHuidigeActiviteit(usesTrap ? "🚶 Op trap" : "⏳ Wachten op lift");
             case GAAT_NAAR_FACILITEIT -> setHuidigeActiviteit("🚶 > Faciliteit");
             case GAAT_NAAR_KAMER -> setHuidigeActiviteit("✓ Check-in");
             case GAAT_NAAR_LOBBY -> setHuidigeActiviteit("✗ Check-out");
@@ -263,13 +263,36 @@ public class Gast extends Persoon {
         return false;
     }
 
+    private boolean staatInHuidigeKamer() {
+        if (huidigKamer == null || huidigKamer.getArea() == null) {
+            return false;
+        }
+
+        double kamerX = getAreaCenterX(huidigKamer.getArea());
+        int kamerY = huidigKamer.getArea().getY() - 1;
+        return (int) y == kamerY && Math.abs(x - kamerX) < 0.1;
+    }
+
     private double getAreaCenterX(Area area) { return area.getX() - 1 + area.getBreedte() / 2.0; }
 
     // --- GETTERS & SETTERS (Voor de Strategie) ---
     public State getGastState() { return state; }
     public void setGastState(State state) { this.state = state; }
     public State getStateNaVerdiepingWissel() { return stateNaVerdiepingWissel; }
-    public void hervatStateNaVerdiepingWissel() { this.state = stateNaVerdiepingWissel; }
+    public void hervatStateNaVerdiepingWissel() {
+        State volgendeState = stateNaVerdiepingWissel;
+        this.state = volgendeState;
+        this.stateNaVerdiepingWissel = State.WANDELEN;
+    }
+    public boolean isBezigMetFaciliteit() {
+        // Voorkomt dat auto check-in/check-out een restaurant/cinema/fitness-event onderbreekt.
+        boolean onderweg = state == State.NAAR_LIFT_WACHTEN
+                || state == State.WACHTEN_OP_VERVOER
+                || state == State.IN_LIFT;
+        return state == State.GAAT_NAAR_FACILITEIT
+                || state == State.IN_FACILITEIT
+                || (onderweg && stateNaVerdiepingWissel == State.GAAT_NAAR_FACILITEIT);
+    }
     public boolean isInLift() { return inLift; }
     public void setInLift(boolean inLift) { this.inLift = inLift; }
     public Lift getLift() { return lift; }

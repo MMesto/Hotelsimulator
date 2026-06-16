@@ -9,6 +9,8 @@ import java.util.Map;
 
 public class Lift implements TickListener {
 
+    // Requirement: Lift- en/of traplogica.
+    // De lift is zelf een TickListener en beweegt per HTE-tick tussen verdiepingen.
     private final double x;
     private double y;
     private final int schachtMinY;
@@ -42,18 +44,22 @@ public class Lift implements TickListener {
 
 
     public boolean voegGastToe(Persoon persoon, int doelVerdieping) {
-        if (fireAlarmActive || state != LiftState.AT_STATION || passagiers.size() >= MAX_CAPACITY) {
+        // Requirement: Lift- en/of traplogica.
+        // Instappen kan alleen als de lift stilstaat, op dezelfde verdieping is en geen brandalarm heeft.
+        if (fireAlarmActive || !isIdle() || passagiers.size() >= MAX_CAPACITY) {
             return false;
         }
 
         int persoonFloor = (int) persoon.getY();
-        if (persoonFloor != currentFloor) {
+        int liftFloor = (int) y;
+        if (persoonFloor != liftFloor) {
             return false;
         }
 
         passagiers.add(persoon);
         passengerDestinations.put(persoon, doelVerdieping);
-        System.out.println("[Lift] " + persoon.getNaam() + " ingestapt op verdieping " + currentFloor);
+        persoon.setLiftPosition(this.x, this.y);
+        System.out.println("[Lift] " + persoon.getNaam() + " ingestapt op verdieping " + liftFloor);
         return true;
     }
 
@@ -66,7 +72,12 @@ public class Lift implements TickListener {
 
     @Override
     public void onTick() {
-        syncPassagierPosities();
+        // Requirement: Lift- en/of traplogica.
+        // Elke tick beweegt de lift richting de volgende verdieping en houdt passagiers op liftpositie.
+        if (fireAlarmActive) {
+            state = LiftState.AT_STATION;
+            return;
+        }
 
         if (stationWaitCounter > 0) {
             state = LiftState.AT_STATION;
@@ -74,6 +85,7 @@ public class Lift implements TickListener {
             if (stationWaitCounter == 0) {
                 determineNextFloor();
             }
+            syncPassagierPosities();
             return;
         }
 
@@ -84,6 +96,7 @@ public class Lift implements TickListener {
             y = targetY;
             state = LiftState.AT_STATION;
             stationWaitCounter = STATION_WAIT_TICKS;
+            syncPassagierPosities();
             return;
         }
 
@@ -94,9 +107,17 @@ public class Lift implements TickListener {
         // Zorg dat we niet voorbij het doel schieten
         if (state == LiftState.MOVING_UP) y = Math.min(y, targetY);
         else y = Math.max(y, targetY);
+        syncPassagierPosities();
     }
 
     private void determineNextFloor() {
+        Integer passagierDoel = getEerstePassagierDoel();
+        if (passagierDoel != null) {
+            currentFloor = passagierDoel;
+            movingUp = currentFloor > (int) y;
+            return;
+        }
+
         if (movingUp) {
             currentFloor++;
             if (currentFloor > schachtMaxY) {
@@ -112,6 +133,17 @@ public class Lift implements TickListener {
         }
     }
 
+    private Integer getEerstePassagierDoel() {
+        int liftFloor = (int) y;
+        for (Persoon persoon : passagiers) {
+            Integer doel = passengerDestinations.get(persoon);
+            if (doel != null && doel != liftFloor) {
+                return Math.max(schachtMinY, Math.min(schachtMaxY, doel));
+            }
+        }
+        return null;
+    }
+
     private void syncPassagierPosities() {
         for (Persoon p : passagiers) {
             p.setLiftPosition(this.x, this.y);
@@ -119,6 +151,8 @@ public class Lift implements TickListener {
     }
 
     public void activeerFireAlarm() {
+        // Requirement: Eventafhandeling + liftlogica.
+        // Bij brandalarm wordt de lift buiten werking gezet en verlaten passagiers de lift.
         this.fireAlarmActive = true;
         System.out.println("[Lift] 🔥 FIRE ALARM: Lift buiten werking gesteld!");
 
@@ -139,7 +173,7 @@ public class Lift implements TickListener {
     // --- GETTERS & SETTERS ---
     public double getX() { return x; }
     public double getY() { return y; }
-    public boolean isIdle() { return state == LiftState.AT_STATION; }
+    public boolean isIdle() { return state == LiftState.AT_STATION && stationWaitCounter > 0; }
     public boolean isFireAlarmActive() { return fireAlarmActive; }
     public void setEventBus(IEventBus eventBus) { this.eventBus = eventBus; }
 }

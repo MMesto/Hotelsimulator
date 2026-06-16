@@ -1,0 +1,358 @@
+@startuml UML_Hotelsimulator_v4
+!pragma layout smetana
+title Hotelsimulator - klassendiagram
+
+left to right direction
+skinparam classAttributeIconSize 0
+skinparam packageStyle rectangle
+skinparam shadowing false
+hide empty members
+
+package ui {
+  class Main {
+    +main(args)
+    -startApplication()
+    -toggleSimulation()
+    -loadLayout()
+    -triggerFireAlarm()
+  }
+
+  class HotelPanel {
+    -hotel : Hotel
+    -lift : Lift
+    -eventBus : EventBusImpl
+    +setHotel(hotel)
+    +setLift(lift)
+    +paintComponent(g)
+  }
+
+  class GuestListWindow
+  class PersonDetailWindow
+  class RoomDetailWindow
+}
+
+package hotelevents {
+  class HotelEvent {
+    -guestId : int
+    -type : HotelEventType
+    -time : int
+    -data : int
+    +getGuestId()
+    +getEventType()
+    +getData()
+  }
+
+  enum HotelEventType {
+    CHECK_IN
+    CHECK_OUT
+    CLEANING_EMERGENCY
+    EVACUATE
+    GODZILLA
+    NEED_FOOD
+    GOTO_CINEMA
+    GOTO_FITNESS
+    START_CINEMA
+    NONE
+  }
+
+  interface HotelEventListener {
+    +notify(event)
+  }
+}
+
+package model {
+  interface TickListener {
+    +onTick()
+  }
+
+  interface IEventBus {
+    +triggerHotelEvent(type, guestId, data)
+  }
+
+  class Simulator {
+    -hotel : Hotel
+    -hotelPanel : HotelPanel
+    -clock : SimulationClock
+    -hteClock : HTEClock
+    -eventBus : EventBusImpl
+    -lift : Lift
+    +tick()
+    +start()
+    +pause()
+    +triggerFireAlarm()
+    +stuurAlleGastenNaarRestaurant()
+  }
+
+  class Hotel {
+    -grid : String[][]
+    -areas : List<Area>
+    -personen : List<Persoon>
+    -kamers : List<Kamer>
+    +addPersoon(p)
+    +addKamer(k)
+    +zoekVrijeKamer(type)
+  }
+
+  class Area {
+    -AreaType : String
+    -Position : String
+    -Dimension : String
+    -Classification : String
+    +getX()
+    +getY()
+    +getBreedte()
+    +getHoogte()
+  }
+
+  enum "Area.Type" as AreaType {
+    ROOM
+    RESTAURANT
+    FITNESS
+    LOBBY
+    SCHACHT
+    LIFT
+    STAIRCASE
+    STORAGE
+    LOUNGE
+  }
+
+  class Kamer {
+    -kamernummer : int
+    -type : String
+    -status : KamerStatus
+    -area : Area
+    +setStatus(status)
+    +setArea(area)
+  }
+
+  enum KamerStatus {
+    VRIJ
+    BEZET
+    SCHOONMAKEN
+  }
+
+  class Lift {
+    -x : double
+    -y : double
+    -passagiers : List<Persoon>
+    -passengerDestinations : Map<Persoon, Integer>
+    +voegGastToe(persoon, doelVerdieping)
+    +verwijderGast(persoon)
+    +onTick()
+    +isIdle()
+  }
+
+  class HTEClock {
+    -listeners : List<TickListener>
+    -tickCount : long
+    +addListener(listener)
+    +removeListener(listener)
+    +tick()
+  }
+
+  class SimulationClock {
+    -tickInterval : long
+    -timestep : int
+    +tick()
+    +start()
+    +stop()
+    +setTickInterval(ms)
+  }
+
+  class EventBusImpl {
+    -eventLog : List<String>
+    -errorLog : List<String>
+    -simulator : Simulator
+    +triggerHotelEvent(type, guestId, data)
+    +handleHotelEvent(event)
+    +handleExternalDLLEvent(name)
+  }
+
+  class ExternalEventProvider {
+    -eventBus : EventBusImpl
+    +start()
+    +isLoaded()
+  }
+
+  class LayoutLoader {
+    +laadLayout(bestandspad)
+    +valideerLayout(grid)
+  }
+}
+
+package "model.personen" {
+  abstract class Persoon {
+    -id : int
+    -naam : String
+    -type : String
+    -x : double
+    -y : double
+    -movementContext : MovementContext
+    +performMovement(data)
+    +setMovementStrategies(normal, evacuation)
+    +useNormalStrategy()
+    +useEvacuationStrategy()
+    +onTick()
+  }
+
+  class Gast {
+    -state : State
+    -huidigKamer : Kamer
+    -lift : Lift
+    -eventBus : IEventBus
+    +checkinKamer(kamer)
+    +checkoutKamer()
+    +gaNaarFaciliteitDoorEvent(type, x, y)
+    +onTick()
+  }
+
+  enum "Gast.State" as GastState {
+    WANDELEN
+    NAAR_LIFT_WACHTEN
+    WACHTEN_OP_VERVOER
+    IN_LIFT
+    GAAT_NAAR_FACILITEIT
+    IN_FACILITEIT
+    GAAT_NAAR_KAMER
+    GAAT_NAAR_LOBBY
+    VERLAAT_HOTEL
+    EVACUATIE
+    BUITEN
+  }
+
+  class Schoonmaker {
+    -state : State
+    -huidigKamer : Kamer
+    -lift : Lift
+    -eventBus : IEventBus
+    +onTick()
+    +setHuidigKamer(kamer)
+  }
+
+  enum "Schoonmaker.State" as SchoonmakerState {
+    VRIJ
+    NAAR_DOEL
+    SCHOONMAKEN
+    IN_LIFT
+    EVACUATIE
+    BUITEN
+  }
+
+  class GastBuilder {
+    +naam(naam)
+    +hotel(hotel)
+    +lift(lift)
+    +eventBus(eventBus)
+    +startPos(x, y)
+    +build()
+  }
+}
+
+package "model.strategy" {
+  interface IMovementStrategy {
+    +beweeg(persoon, data)
+  }
+
+  class MovementContext {
+    -normalStrategy : IMovementStrategy
+    -evacuationStrategy : IMovementStrategy
+    -currentStrategy : IMovementStrategy
+    +beweeg(persoon, data)
+    +useNormalStrategy()
+    +useEvacuationStrategy()
+  }
+
+  class MovementData {
+    -hotel : Hotel
+    -lift : Lift
+    -eventBus : IEventBus
+    -maxX : int
+    -maxY : int
+    -liftWaitX : double
+    -trapX : double
+  }
+
+  class GastNormalStrategy {
+    +beweeg(persoon, data)
+  }
+
+  class SchoonmakerNormalStrategy {
+    +beweeg(persoon, data)
+  }
+
+  class EvacuationMovement {
+    +beweeg(persoon, data)
+  }
+}
+
+' UI
+Main --> Simulator
+Main --> HotelPanel
+Main --> GuestListWindow
+Main --> PersonDetailWindow
+Main --> RoomDetailWindow
+HotelPanel --> Hotel
+HotelPanel --> Lift
+HotelPanel --> EventBusImpl
+GuestListWindow --> Hotel
+PersonDetailWindow --> Persoon
+RoomDetailWindow --> Kamer
+
+' Model
+Simulator --> Hotel
+Simulator --> HotelPanel
+Simulator --> SimulationClock
+Simulator --> HTEClock
+Simulator --> EventBusImpl
+Simulator --> Lift
+
+Hotel "1" o-- "*" Area
+Hotel "1" o-- "*" Kamer
+Hotel "1" o-- "*" Persoon
+Kamer --> Area
+Area --> AreaType
+Kamer --> KamerStatus
+
+HTEClock "1" o-- "*" TickListener
+Lift ..|> TickListener
+Persoon ..|> TickListener
+Lift "1" o-- "*" Persoon : passagiers
+
+EventBusImpl ..|> IEventBus
+EventBusImpl --> Simulator
+EventBusImpl --> HotelEvent
+EventBusImpl --> HotelEventType
+ExternalEventProvider --> EventBusImpl
+LayoutLoader ..> Hotel
+LayoutLoader ..> Area
+
+' Personen
+Persoon <|-- Gast
+Persoon <|-- Schoonmaker
+Gast --> GastState
+Schoonmaker --> SchoonmakerState
+Gast --> Kamer
+Gast --> Lift
+Gast --> IEventBus
+Schoonmaker --> Kamer
+Schoonmaker --> Lift
+Schoonmaker --> IEventBus
+GastBuilder ..> Gast
+
+' Strategy pattern
+Persoon o-- MovementContext
+MovementContext --> IMovementStrategy : gebruikt
+IMovementStrategy <|.. GastNormalStrategy
+IMovementStrategy <|.. SchoonmakerNormalStrategy
+IMovementStrategy <|.. EvacuationMovement
+IMovementStrategy ..> MovementData
+MovementData --> Hotel
+MovementData --> Lift
+MovementData --> IEventBus
+
+' Events
+HotelEvent --> HotelEventType
+HotelEventListener ..> HotelEvent
+IEventBus ..> HotelEventType
+
+@enduml

@@ -25,6 +25,8 @@ public class HTEClock {
 
     // Voer één tijdstap (tick) uit voor de hele simulatie
     public void tick() {
+        // Requirement: Simulatieklok (HTE).
+        // Een HTE-tick stuurt alle objecten aan die TickListener implementeren.
         tickCount++;
 
         try {

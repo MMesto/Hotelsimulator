@@ -121,6 +121,8 @@ public class EventBusImpl implements IEventBus {
      * US4.2.A: Robuuste foutafhandeling
      */
     public void triggerHotelEvent(HotelEventType eventType, int guestId, int time, int data) {
+        // Requirement: Eventafhandeling.
+        // Maakt een HotelEvent aan, logt het event en stuurt het naar de interne handler.
         try {
             // NULL check
             if (eventType == null) {
@@ -151,6 +153,8 @@ public class EventBusImpl implements IEventBus {
      * US4.2.A: Robuuste foutafhandeling voor null/corrupte event data
      */
     public void handleHotelEvent(HotelEvent event) {
+        // Requirement: Eventafhandeling.
+        // Hier wordt bepaald wat CHECK_IN, CHECK_OUT, NEED_FOOD, EVACUATE enz. doen.
         try {
             // NULL check
             if (event == null) {

@@ -1,5 +1,6 @@
 package model.strategy;
 
+import model.Kamer;
 import model.personen.Gast;
 import model.personen.Persoon;
 import java.util.Random;
@@ -12,6 +13,8 @@ public class GastNormalStrategy implements IMovementStrategy {
 
     @Override
     public void beweeg(Persoon persoon, MovementData data) {
+        // Requirement: Bewegingssysteem.
+        // Dit is het normale beweeggedrag van gasten: wandelen, kamer, lift/trap en faciliteiten.
         if (!(persoon instanceof Gast)) return;
         Gast gast = (Gast) persoon;
 
@@ -43,6 +46,7 @@ public class GastNormalStrategy implements IMovementStrategy {
             if ((int)data.getLift().getY() == gast.getDoelVerdieping() && data.getLift().isIdle()) {
                 data.getLift().verwijderGast(gast);
                 gast.setInLift(false);
+                gast.setX(data.getLiftWaitX());
                 gast.setY(gast.getDoelVerdieping() + 0.5);
                 gast.hervatStateNaVerdiepingWissel();
             }
@@ -50,11 +54,17 @@ public class GastNormalStrategy implements IMovementStrategy {
     }
 
     private void randomWalk(Gast gast) {
-        if (gast.getRoomStayTimer() > 0) {
-            gast.setRoomStayTimer(gast.getRoomStayTimer() - 1);
+        if (gast.getHuidigKamer() != null) {
+            if (!staatInHuidigeKamer(gast)) {
+                stuurTerugNaarKamer(gast);
+            } else if (gast.getRoomStayTimer() > 0) {
+                gast.setRoomStayTimer(gast.getRoomStayTimer() - 1);
+            }
             return;
         }
-        if (gast.getHuidigKamer() != null) {
+
+        if (gast.getRoomStayTimer() > 0) {
+            gast.setRoomStayTimer(gast.getRoomStayTimer() - 1);
             return;
         }
 
@@ -79,6 +89,8 @@ public class GastNormalStrategy implements IMovementStrategy {
     }
 
     private void beweegNaarLiftTrap(Gast gast, MovementData data) {
+        // Requirement: Lift- en/of traplogica.
+        // Bij verdieping wisselen loopt de gast naar lift of trap.
         double speed = gast.getActueleSnelheid();
         // De strategy krijgt lift/trap-posities via MovementData, niet via vaste literals.
         double doeltargetX = gast.isUsesTrap() ? data.getTrapX() : data.getLiftWaitX();
@@ -96,7 +108,10 @@ public class GastNormalStrategy implements IMovementStrategy {
         if (gast.isUsesTrap()) {
             int direction = bepaalTrapRichting(gast, data);
             gast.setY(((int)gast.getY() + direction) + 0.5);
-            gast.hervatStateNaVerdiepingWissel();
+            if (gast.getStateNaVerdiepingWissel() == Gast.State.WANDELEN
+                    || (int)gast.getY() == gast.getDoelVerdieping()) {
+                gast.hervatStateNaVerdiepingWissel();
+            }
         } else if (data.getLift() != null && Math.abs(data.getLift().getY() - gast.getY()) < 1.0 && data.getLift().isIdle()) {
             int nieuwDoel;
             if (gast.getStateNaVerdiepingWissel() != Gast.State.WANDELEN) {
@@ -111,12 +126,20 @@ public class GastNormalStrategy implements IMovementStrategy {
 
             if (data.getLift().voegGastToe(gast, gast.getDoelVerdieping())) {
                 gast.setInLift(true);
+                gast.setLiftPosition(data.getLift().getX(), data.getLift().getY());
                 gast.setGastState(Gast.State.IN_LIFT);
             }
         }
     }
 
     private void beweegNaarFaciliteit(Gast gast) {
+        // Requirement: Minimaal een faciliteit.
+        // De gast loopt naar het centrum van de gekozen faciliteit.
+        if ((int)gast.getY() != gast.getDoelVerdieping()) {
+            gast.wiltVerdiepingWisselen();
+            return;
+        }
+
         double speed = gast.getActueleSnelheid();
         double dx = gast.getFaciliteitX() - gast.getX();
 
@@ -150,11 +173,22 @@ public class GastNormalStrategy implements IMovementStrategy {
     }
 
     private void beweegNaarKamer(Gast gast) {
-        if ((int)gast.getY() != gast.getDoelVerdieping()) {
+        // Requirement: Inchecken van gasten.
+        // Na check-in beweegt de gast naar de toegewezen kamer.
+        Kamer kamer = gast.getHuidigKamer();
+        if (kamer == null) {
+            gast.setGastState(Gast.State.WANDELEN);
+            return;
+        }
+
+        double kamerX = getAreaCenterX(kamer.getArea());
+        int kamerVerdieping = kamer.getArea().getY() - 1;
+        gast.setDoelVerdieping(kamerVerdieping);
+
+        if ((int)gast.getY() != kamerVerdieping) {
             gast.wiltVerdiepingWisselen();
         } else {
             double speed = gast.getActueleSnelheid();
-            double kamerX = gast.getDestX(); // de bestemming die in checkinKamer is gezet
             double dx = kamerX - gast.getX(); // echte afstand tot de kamer
 
             if (Math.abs(dx) < speed) {
@@ -167,7 +201,29 @@ public class GastNormalStrategy implements IMovementStrategy {
         }
     }
 
+    private boolean staatInHuidigeKamer(Gast gast) {
+        Kamer kamer = gast.getHuidigKamer();
+        if (kamer == null || kamer.getArea() == null) {
+            return false;
+        }
+
+        double kamerX = getAreaCenterX(kamer.getArea());
+        int kamerY = kamer.getArea().getY() - 1;
+        return (int) gast.getY() == kamerY && Math.abs(gast.getX() - kamerX) < 0.1;
+    }
+
+    private void stuurTerugNaarKamer(Gast gast) {
+        Kamer kamer = gast.getHuidigKamer();
+        double kamerX = getAreaCenterX(kamer.getArea());
+        gast.setDestX(kamerX);
+        gast.setDoelVerdieping(kamer.getArea().getY() - 1);
+        gast.setRoomStayTimer(0);
+        gast.setGastState(Gast.State.GAAT_NAAR_KAMER);
+    }
+
     private void beweegNaarLobby(Gast gast) {
+        // Requirement: Uitchecken van gasten.
+        // Na checkout loopt de gast terug naar de lobby en daarna naar buiten.
         int lobbyY = gast.getMaxY() - 1;
         if ((int)gast.getY() != lobbyY) {
             gast.wiltVerdiepingWisselen();

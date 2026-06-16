@@ -76,6 +76,8 @@ public class HotelPanel extends JPanel implements MouseInputListener {
 
     @Override
     protected void paintComponent(Graphics g) {
+        // Requirement: Visualisatie van gasten en/of personeel.
+        // Elke repaint tekent de actuele hotelkaart, lift, personen, legenda en eventlijst.
         super.paintComponent(g);
         if (hotel == null) return;
 
@@ -101,6 +103,8 @@ public class HotelPanel extends JPanel implements MouseInputListener {
     }
 
     private void tekenEventLijst(Graphics g, int hotelOffsetX, int hotelOffsetY) {
+        // Requirement: Eventafhandeling.
+        // De laatste hotel-events worden links naast het hotel zichtbaar gemaakt.
         Graphics2D g2 = (Graphics2D) g.create();
 
         int panelX = Math.max(10, hotelOffsetX - EVENT_PANEL_GAP - EVENT_PANEL_BREEDTE);
@@ -225,6 +229,8 @@ public class HotelPanel extends JPanel implements MouseInputListener {
     }
 
     private void tekenGrid(Graphics g, int offsetX, int offsetY) {
+        // Requirement: Hotelgrid en layout.
+        // De rasterlijnen maken de layout visueel als grid zichtbaar.
         g.setColor(new Color(230, 230, 230));
         int hotelBreedte = hotel.getBreedte() * VAKJE_GROOTTE;
         int hotelHoogte = hotel.getHoogte() * VAKJE_GROOTTE;
@@ -238,6 +244,8 @@ public class HotelPanel extends JPanel implements MouseInputListener {
     }
 
     private void tekenAreas(Graphics g, int offsetX, int offsetY) {
+        // Requirement: Hotelgrid en layout.
+        // Elke Area uit de layout wordt als gekleurd vlak met label getekend.
         Graphics2D g2 = (Graphics2D) g;
 
         for (Area area : hotel.getAreas()) {
@@ -268,6 +276,8 @@ public class HotelPanel extends JPanel implements MouseInputListener {
     }
 
     private void tekenLift(Graphics g, int offsetX, int offsetY) {
+        // Requirement: Lift- en/of traplogica.
+        // De lift wordt los getekend, omdat de positie tijdens de simulatie beweegt.
         if (lift == null) return;
 
         int liftX = (int)(lift.getX() * VAKJE_GROOTTE) + offsetX - VAKJE_GROOTTE / 2;
@@ -290,11 +300,29 @@ public class HotelPanel extends JPanel implements MouseInputListener {
     }
 
     private void tekenPersonen(Graphics g, int offsetX, int offsetY) {
+        // Requirement: Visualisatie van gasten en/of personeel.
+        // Gasten worden als cirkel getekend; schoonmakers als vierkant met S.
+        int liftGastIndex = 0;
         for (Persoon persoon : hotel.getPersonen()) {
             int px = (int)(persoon.getX() * VAKJE_GROOTTE) + offsetX - 8;
             int py = (int)(persoon.getY() * VAKJE_GROOTTE) + offsetY - 8;
 
             if (persoon instanceof Gast gast) {
+                if (gast.isInLift()) {
+                    if (lift == null) continue;
+                    // Kleine bolletjes in het liftvak: passagiers zitten in de lift, niet los in de schacht.
+                    int liftX = (int)(lift.getX() * VAKJE_GROOTTE) + offsetX - VAKJE_GROOTTE / 2;
+                    int liftY = (int)(lift.getY() * VAKJE_GROOTTE) + offsetY - VAKJE_GROOTTE / 2;
+                    int drawX = liftX + 7 + (liftGastIndex % 3) * 13;
+                    int drawY = liftY + 32 + (liftGastIndex / 3) * 10;
+                    liftGastIndex++;
+
+                    g.setColor(gast.getKleur());
+                    g.fillOval(drawX, drawY, 9, 9);
+                    g.setColor(Color.BLACK);
+                    g.drawOval(drawX, drawY, 9, 9);
+                    continue;
+                }
                 int diameter = gast.isGodzillaActive() ? 40 : 16;
                 int drawX = (int)(persoon.getX() * VAKJE_GROOTTE) + offsetX - diameter / 2;
                 int drawY = (int)(persoon.getY() * VAKJE_GROOTTE) + offsetY - diameter / 2;
@@ -363,6 +391,8 @@ public class HotelPanel extends JPanel implements MouseInputListener {
 
     @Override
     public void mouseClicked(MouseEvent e) {
+        // Requirement: Visualisatie van gasten en/of personeel.
+        // Klikken op personen, kamers of lobby opent extra detailvensters.
         if (hotel == null) return;
 
         int clickX = e.getX();

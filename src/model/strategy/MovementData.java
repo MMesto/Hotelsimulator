@@ -7,6 +7,9 @@ import model.Lift;
 /**
  * Expliciete invoer voor een movement strategy.
  * Zo is zichtbaar welke simulatiegegevens een strategy mag gebruiken.
+ *
+ * Requirement: Bewegingssysteem.
+ * Strategies krijgen hiermee hotel-, lift-, trap- en opslagdata zonder hardcoded aannames.
  */
 public class MovementData {
     private final Hotel hotel;

@@ -21,6 +21,8 @@ public class SimulationClock {
      * @return true als een tick moet plaatsvinden
      */
     public boolean tick() {
+        // Requirement: Simulatieklok (HTE).
+        // Deze klok bepaalt op basis van echte tijd of de simulatie een nieuwe stap mag doen.
         long now = System.currentTimeMillis();
         if (now - lastTickTime >= tickInterval) {
             lastTickTime = now;

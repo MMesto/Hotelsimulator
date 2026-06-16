@@ -14,6 +14,9 @@ public class LayoutLoader {
 
     public static Hotel laadLayout(String bestandspad) throws Exception {
 
+        // Requirement: Hotelgrid en layout.
+        // Deze methode leest de JSON-layout en bouwt daaruit het Hotel-model.
+
         // 1. BESTANDSTYPE CHECK
         if (!bestandspad.endsWith(".json")) {
             throw new Exception("Alleen JSON bestanden toegestaan");
@@ -39,8 +42,8 @@ public class LayoutLoader {
             if (onder > maxY) maxY = onder;
         }
 
-        // 4. GRID INITIALISEREN
-        // We gebruiken maxY en maxX direct.
+        // Requirement: Hotelgrid en layout.
+        // Het grid is de interne kaart waarop kamers, lobby, lift, trap en faciliteiten komen.
         String[][] grid = new String[maxY][maxX];
         for (int y = 0; y < maxY; y++) {
             for (int x = 0; x < maxX; x++) {
@@ -48,7 +51,8 @@ public class LayoutLoader {
             }
         }
 
-        // 5. GRID VULLEN MET AREAS
+        // Requirement: Hotelgrid en layout.
+        // Elke Area uit de JSON krijgt een plek en afkorting in het grid.
         for (Area area : areas) {
             String typeAfkorting = getAfkorting(area);
 
@@ -100,6 +104,8 @@ public class LayoutLoader {
     }
 
     public static void valideerLayout(String[][] grid) throws Exception {
+        // Requirement: Lift- en/of traplogica.
+        // De layout moet een lift en trap hebben, anders kunnen verdiepingen niet goed werken.
         boolean heeftLift = false;
         boolean heeftTrap = false;
 

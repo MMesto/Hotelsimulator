@@ -34,6 +34,8 @@ public class Simulator {
     private static final int FOOD_EVENT_INTERVAL = 450;
 
     public Simulator(Hotel hotel, HotelPanel hotelPanel) {
+        // Requirement: Simulatieklok, eventafhandeling en basisopstart.
+        // De simulator koppelt het model, de klok, events, lift en personen aan elkaar.
         this.hotel = hotel;
         this.hotelPanel = hotelPanel;
         this.clock = new SimulationClock(100);
@@ -45,6 +47,8 @@ public class Simulator {
         initialiseerPersonen();
     }
     private void initialiseerLift() {
+        // Requirement: Lift- en/of traplogica.
+        // De liftpositie en liftgrenzen komen uit de ingeladen layout.
         for (Area area : hotel.getAreas()) {
             String type = area.getAreaType();
             if (type != null && (type.equalsIgnoreCase("Schacht") ||
@@ -66,6 +70,8 @@ public class Simulator {
         }
     }
     private void initialiseerPersonen() {
+        // Requirement: Bewegingssysteem.
+        // Personen krijgen hier hun strategies, hoteldata, lift/trap-posities en startpositie.
         Area opslagArea = null;
         for (Area area : hotel.getAreas()) {
             if (area.getAreaType() != null) {
@@ -73,6 +79,8 @@ public class Simulator {
                     this.lobbyArea = area;
                 }
                 if (area.getAreaType().equalsIgnoreCase("Restaurant")) {
+                    // Requirement: Minimaal een faciliteit.
+                    // Restaurant wordt gebruikt voor het food-event.
                     this.restaurantArea = area;
                 }
                 if (area.getAreaType().equalsIgnoreCase("Cinema")) {
@@ -82,6 +90,8 @@ public class Simulator {
                     this.fitnessArea = area;
                 }
                 if (area.getAreaType().equalsIgnoreCase("Staircase")) {
+                    // Requirement: Lift- en/of traplogica.
+                    // De traplocatie uit de layout wordt gebruikt bij verdieping wisselen en evacuatie.
                     this.trapX = getAreaCenterX(area);
                 }
                 if (area.getAreaType().equalsIgnoreCase("Storage") || area.getAreaType().equalsIgnoreCase("Opslag")) {
@@ -90,7 +100,8 @@ public class Simulator {
             }
         }
         if (lift != null) {
-            this.liftWaitX = lift.getX();
+            // Wachtende gasten staan op de rand naast de schacht; in de lift staan ze op lift.getX().
+            this.liftWaitX = lift.getX() + 0.5;
         }
         for (Persoon persoon : hotel.getPersonen()) {
             if (persoon instanceof TickListener) {
@@ -128,6 +139,8 @@ public class Simulator {
         }
     }
     public void tick() {
+        // Requirement: Simulatieklok (HTE).
+        // Een simulatietick werkt alleen door als de SimulationClock aangeeft dat het tijd is.
         if (!running || !clock.tick()) {
             hotelPanel.repaint();
             return;
@@ -142,9 +155,9 @@ public class Simulator {
         }
         hotel.getPersonen().removeAll(teVerwijderen);
 
-        autoCheckInGuests();
-        autoCheckoutGuests();
-        triggerFoodEventAlsNodig();
+        autoCheckInGuests();       // Requirement: Inchecken van gasten.
+        autoCheckoutGuests();      // Requirement: Uitchecken van gasten.
+        triggerFoodEventAlsNodig(); // Requirement: Minimaal een faciliteit.
 
         if (!isEvacuatieActief()) {
             lastGuestSpawnTime++;
@@ -173,6 +186,8 @@ public class Simulator {
     }
 
     private void autoCheckInGuests() {
+        // Requirement: Inchecken van gasten.
+        // Gasten in de lobby krijgen automatisch een vrije kamer toegewezen.
         if (lift != null && lift.isFireAlarmActive()) {
             return;
         }
@@ -182,6 +197,9 @@ public class Simulator {
 
             for (Persoon persoon : personenKopie) {
                 if (persoon instanceof Gast gast) {
+                    if (gast.isBezigMetFaciliteit()) {
+                        continue; // Faciliteit-event heeft tijdelijk voorrang op automatisch inchecken.
+                    }
                     if (gast.getHuidigKamer() == null && isInArea(gast, lobbyArea) && gast.getX() > 1.0) {
 
                         Kamer kamer = hotel.zoekVrijeKamer(gast.getPreferredRoomType());
@@ -218,6 +236,8 @@ public class Simulator {
     }
 
     private void autoCheckoutGuests() {
+        // Requirement: Uitchecken van gasten.
+        // Na een vaste verblijfsduur checkt een gast uit en wordt de kamer SCHOONMAKEN.
         if (lift != null && lift.isFireAlarmActive()) {
             return;
         }
@@ -227,6 +247,9 @@ public class Simulator {
 
             for (Persoon persoon : personenKopie) {
                 if (persoon instanceof Gast gast) {
+                    if (gast.isBezigMetFaciliteit()) {
+                        continue; // Gasten mogen niet tijdens een restaurant-event ineens uitchecken.
+                    }
                     if (gast.getHuidigKamer() != null && guestCheckInTime.containsKey(gast.getNaam())) {
 
                         int stayTime = guestCheckInTime.get(gast.getNaam()) + 1;
@@ -245,6 +268,8 @@ public class Simulator {
         }
     }
     private boolean hasAvailableRoom() {
+        // Requirement: Kamerbeheer.
+        // Nieuwe gasten worden alleen gespawned als er minimaal een vrije kamer is.
         for (Kamer kamer : hotel.getKamers()) {
             if (kamer.getStatus() == Kamer.KamerStatus.VRIJ) {
                 return true;
@@ -254,6 +279,8 @@ public class Simulator {
     }
 
     private void triggerFoodEventAlsNodig() {
+        // Requirement: Minimaal een faciliteit.
+        // Periodiek wordt een food-event gestuurd waardoor gasten naar het restaurant gaan.
         if (restaurantArea == null || isEvacuatieActief()) {
             foodEventTimer = 0;
             return;
@@ -282,18 +309,25 @@ public class Simulator {
     }
 
     public void stuurAlleGastenNaarFaciliteit(String type) {
+        // Requirement: Minimaal een faciliteit.
+        // Events kunnen gasten naar Restaurant, Cinema of Fitness sturen als die bestaan in de layout.
         Area area = zoekFaciliteit(type);
         if (area == null || isEvacuatieActief()) {
             return;
         }
 
-        double targetX = getAreaCenterX(area);
         double targetY = getAreaCenterY(area);
+        List<Gast> gasten = new ArrayList<>();
 
         for (Persoon persoon : new ArrayList<>(hotel.getPersonen())) {
             if (persoon instanceof Gast gast) {
-                gast.gaNaarFaciliteitDoorEvent(type, targetX, targetY);
+                gasten.add(gast);
             }
+        }
+
+        for (int i = 0; i < gasten.size(); i++) {
+            double targetX = getGespreideAreaX(area, i);
+            gasten.get(i).gaNaarFaciliteitDoorEvent(type, targetX, targetY);
         }
     }
 
@@ -312,7 +346,22 @@ public class Simulator {
         return area.getY() - 1 + area.getHoogte() / 2.0;
     }
 
+    private double getGespreideAreaX(Area area, int index) {
+        // Spreid gasten binnen de faciliteit, zodat ze niet allemaal exact op elkaar staan.
+        int plekken = Math.max(1, area.getBreedte() * 2);
+        if (plekken == 1) {
+            return getAreaCenterX(area);
+        }
+
+        double minX = area.getX() - 1 + 0.35;
+        double maxX = area.getX() - 1 + area.getBreedte() - 0.35;
+        int plek = index % plekken;
+        return minX + ((maxX - minX) * plek / (plekken - 1));
+    }
+
     private boolean isEvacuatieActief() {
+        // Requirement: Eventafhandeling.
+        // Tijdens evacuatie worden normale processen zoals nieuwe gasten en faciliteit-events gepauzeerd.
         if (lift != null && lift.isFireAlarmActive()) {
             return true;
         }
@@ -326,6 +375,8 @@ public class Simulator {
     }
 
     private void spawnNewGuest() {
+        // Requirement: Inchecken van gasten.
+        // Nieuwe gasten komen buiten bij de lobby binnen en kunnen daarna automatisch inchecken.
         if (lobbyArea == null) return;
 
         String[] firstNames = {"Emma", "Liam", "Olivia", "Noah", "Ava", "Elijah", "Sophia", "Mason"};
@@ -366,6 +417,8 @@ public class Simulator {
     }
 
     public void triggerFireAlarm() {
+        // Requirement: Eventafhandeling + lift/traplogica.
+        // Brandalarm zet personen in evacuatiemodus en schakelt de lift uit.
         System.out.println("\n============================================================");
         System.out.println("🚨 🚨 🚨  BRANDALARM GEACTIVEERD - EVACUATIE BEGONNEN  🚨 🚨 🚨");
         System.out.println("============================================================\n");
