@@ -87,11 +87,14 @@ public class LayoutLoader {
             case "Restaurant": return "R";
             case "Fitness": return "F";
             case "Lobby": return "L";
+            case "Schacht":
             case "Elevator": // Sommige JSONs noemen het Elevator
             case "Lift":
                 return "Elevator"; // We noemen dit intern Elevator voor de Schacht
             case "Staircase": return "T";
             case "Storage": return "S";
+            case "Opslag": return "S";
+            case "Lounge": return "Lounge";
             default: return "?";
         }
     }
@@ -107,9 +110,8 @@ public class LayoutLoader {
             }
         }
 
-        // Als je wilt dat het laden altijd slaagt voor testdoeleinden,
-        // kun je deze throws tijdelijk wegcommenten.
-        if (!heeftLift) System.out.println("[Waarschuwing] Geen lift gevonden in layout");
-        if (!heeftTrap) System.out.println("[Waarschuwing] Geen trap gevonden in layout");
+        // Layouts zonder lift of trap zijn niet bruikbaar voor deze simulatie.
+        if (!heeftLift) throw new Exception("Geen lift gevonden in layout");
+        if (!heeftTrap) throw new Exception("Geen trap gevonden in layout");
     }
 }

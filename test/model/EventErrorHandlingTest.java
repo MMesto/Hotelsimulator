@@ -23,12 +23,12 @@ public class EventErrorHandlingTest {
         System.out.println("✅ System blijft draaien\n");
 
         System.out.println("[TEST 3] Null HotelEvent");
-        eventBus.notify(null);
+        eventBus.handleHotelEvent(null);
         System.out.println("✅ System blijft draaien\n");
 
         System.out.println("[TEST 4] HotelEvent met null type");
         HotelEvent badEvent = new HotelEvent(1, null, 0, 0);
-        eventBus.notify(badEvent);
+        eventBus.handleHotelEvent(badEvent);
         System.out.println("✅ System blijft draaien\n");
 
         System.out.println("[TEST 5] Trigger event met null type");

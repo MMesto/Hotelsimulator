@@ -1,21 +1,18 @@
 package model;
 
 import hotelevents.HotelEvent;
-import hotelevents.HotelEventListener;
 import hotelevents.HotelEventType;
 import java.util.ArrayList;
 import java.util.List;
 
 /**
  * EventBus - Centraal event management systeem
- * Integreert HotelEventType en HotelEventListener van school project
+ * Integreert HotelEventType van het schoolproject
  * Events kunnen door de Simulator of andere klasses getriggerd worden
  * * UPDATE: Toegevoegd voor US4.1 Externe DLL Events (systemState & handleExternalDLLEvent)
  */
-public class EventBusImpl implements HotelEventListener, IEventBus {
+public class EventBusImpl implements IEventBus {
 
-    private final List<TickListener> listeners = new ArrayList<>();
-    private final List<HotelEventListener> hotelListeners = new ArrayList<>();
     private final List<String> eventLog = new ArrayList<>();
     private final List<String> errorLog = new ArrayList<>();
     private int eventCounter = 0;
@@ -140,20 +137,7 @@ public class EventBusImpl implements HotelEventListener, IEventBus {
             System.out.println("\n" + emoji + " HOTEL EVENT TRIGGERED: " + eventType.name());
             logEvent("HOTEL_EVENT: " + eventType.name() + " (Guest: " + guestId + ", Data: " + data + ")");
 
-            // Notificeer alle hotel event listeners
-            for (HotelEventListener listener : hotelListeners) {
-                try {
-                    System.out.println("  → Notificeer: " + listener.getClass().getSimpleName());
-                    listener.notify(event);
-                } catch (Exception e) {
-                    String errorMsg = "⚠️ Error notifying listener: " + e.getMessage();
-                    System.err.println(errorMsg);
-                    logError(errorMsg);
-                }
-            }
-
-            // Ook het centrale systeem notificeren
-            notify(event);
+            handleHotelEvent(event);
         } catch (Exception e) {
             String errorMsg = "❌ Exception in triggerHotelEvent: " + e.getMessage();
             System.err.println(errorMsg);
@@ -162,11 +146,11 @@ public class EventBusImpl implements HotelEventListener, IEventBus {
     }
 
     /**
-     * HotelEventListener interface - ontvang en verwerk events
+     * Verwerkt hotel-events intern.
+     * De naam is bewust niet notify(), zodat tick-updates en events niet door elkaar lopen.
      * US4.2.A: Robuuste foutafhandeling voor null/corrupte event data
      */
-    @Override
-    public void notify(HotelEvent event) {
+    public void handleHotelEvent(HotelEvent event) {
         try {
             // NULL check
             if (event == null) {
@@ -212,9 +196,15 @@ public class EventBusImpl implements HotelEventListener, IEventBus {
                     break;
                 case GOTO_CINEMA:
                     logEvent("🎬 GOTO_CINEMA: Guest " + event.getGuestId() + " going to cinema");
+                    if (simulator != null) {
+                        simulator.stuurAlleGastenNaarFaciliteit("Cinema");
+                    }
                     break;
                 case GOTO_FITNESS:
                     logEvent("💪 GOTO_FITNESS: Guest " + event.getGuestId() + " going to fitness");
+                    if (simulator != null) {
+                        simulator.stuurAlleGastenNaarFaciliteit("Fitness");
+                    }
                     break;
                 case START_CINEMA:
                     logEvent("🎞️ START_CINEMA: Cinema show starting");
@@ -225,7 +215,7 @@ public class EventBusImpl implements HotelEventListener, IEventBus {
                     break;
             }
         } catch (Exception e) {
-            String errorMsg = "❌ Exception in notify: " + e.getMessage();
+            String errorMsg = "❌ Exception in handleHotelEvent: " + e.getMessage();
             System.err.println(errorMsg);
             logError(errorMsg);
         }

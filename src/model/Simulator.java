@@ -25,6 +25,10 @@ public class Simulator {
     private Lift lift;
     private Area lobbyArea;
     private Area restaurantArea;
+    private Area cinemaArea;
+    private Area fitnessArea;
+    private double liftWaitX = Gast.LIFT_WAIT_X;
+    private double trapX = Gast.TRAP_X;
     private int foodEventTimer = 0;
     private Map<String, Integer> guestCheckInTime = new HashMap<>();
     private static final int FOOD_EVENT_INTERVAL = 450;
@@ -71,10 +75,22 @@ public class Simulator {
                 if (area.getAreaType().equalsIgnoreCase("Restaurant")) {
                     this.restaurantArea = area;
                 }
+                if (area.getAreaType().equalsIgnoreCase("Cinema")) {
+                    this.cinemaArea = area;
+                }
+                if (area.getAreaType().equalsIgnoreCase("Fitness")) {
+                    this.fitnessArea = area;
+                }
+                if (area.getAreaType().equalsIgnoreCase("Staircase")) {
+                    this.trapX = getAreaCenterX(area);
+                }
                 if (area.getAreaType().equalsIgnoreCase("Storage") || area.getAreaType().equalsIgnoreCase("Opslag")) {
                     opslagArea = area;
                 }
             }
+        }
+        if (lift != null) {
+            this.liftWaitX = lift.getX();
         }
         for (Persoon persoon : hotel.getPersonen()) {
             if (persoon instanceof TickListener) {
@@ -86,6 +102,7 @@ public class Simulator {
                 gast.setHotel(hotel);
                 gast.setEventBus(eventBus);  // Set event bus
                 gast.setGridBounds(hotel.getBreedte(), hotel.getHoogte());
+                gast.setTransportPoints(liftWaitX, trapX);
 
                 if (lobbyArea != null) {
                     double startX = -1.0; // Start net buiten het hotel
@@ -99,10 +116,12 @@ public class Simulator {
                 schoonmaker.setHotel(hotel);
                 schoonmaker.setEventBus(eventBus);
                 schoonmaker.setGridBounds(hotel.getBreedte(), hotel.getHoogte());
+                schoonmaker.setTransportPoints(liftWaitX, trapX);
 
                 if (opslagArea != null) {
                     double startX = opslagArea.getX() - 0.5;
                     double startY = opslagArea.getY() - 0.5;
+                    schoonmaker.setStoragePosition(startX, startY);
                     schoonmaker.setStartPositie(startX, startY);
                 }
             }
@@ -165,7 +184,8 @@ public class Simulator {
                 if (persoon instanceof Gast gast) {
                     if (gast.getHuidigKamer() == null && isInArea(gast, lobbyArea) && gast.getX() > 1.0) {
 
-                        Kamer kamer = hotel.zoekVrijeKamer("PentHouse");
+                        Kamer kamer = hotel.zoekVrijeKamer(gast.getPreferredRoomType());
+                        if (kamer == null) kamer = hotel.zoekVrijeKamer("PentHouse");
                         if (kamer == null) kamer = hotel.zoekVrijeKamer("Luxe");
                         if (kamer == null) kamer = hotel.zoekVrijeKamer("Standaard");
                         if (kamer == null) kamer = hotel.zoekVrijeKamer("Budget");
@@ -258,18 +278,30 @@ public class Simulator {
     }
 
     public void stuurAlleGastenNaarRestaurant() {
-        if (restaurantArea == null || isEvacuatieActief()) {
+        stuurAlleGastenNaarFaciliteit("Restaurant");
+    }
+
+    public void stuurAlleGastenNaarFaciliteit(String type) {
+        Area area = zoekFaciliteit(type);
+        if (area == null || isEvacuatieActief()) {
             return;
         }
 
-        double restaurantX = getAreaCenterX(restaurantArea);
-        double restaurantY = getAreaCenterY(restaurantArea);
+        double targetX = getAreaCenterX(area);
+        double targetY = getAreaCenterY(area);
 
         for (Persoon persoon : new ArrayList<>(hotel.getPersonen())) {
             if (persoon instanceof Gast gast) {
-                gast.gaNaarRestaurantDoorEvent(restaurantX, restaurantY);
+                gast.gaNaarFaciliteitDoorEvent(type, targetX, targetY);
             }
         }
+    }
+
+    private Area zoekFaciliteit(String type) {
+        if ("Restaurant".equalsIgnoreCase(type)) return restaurantArea;
+        if ("Cinema".equalsIgnoreCase(type)) return cinemaArea;
+        if ("Fitness".equalsIgnoreCase(type)) return fitnessArea;
+        return null;
     }
 
     private double getAreaCenterX(Area area) {
@@ -310,9 +342,11 @@ public class Simulator {
                 .hotel(hotel)
                 .lift(lift)
                 .eventBus(eventBus)
+                .preferredRoomType(randomType)
                 .gridBounds(hotel.getBreedte(), hotel.getHoogte())
                 .startPos(startX, startY)
                 .build();
+        newGuest.setTransportPoints(liftWaitX, trapX);
 
         hteClock.addListener(newGuest);
         hotel.addPersoon(newGuest);

@@ -4,6 +4,7 @@ import model.TickListener;
 
 import model.strategy.IMovementStrategy;
 import model.strategy.MovementContext;
+import model.strategy.MovementData;
 
 /**
  * Basisklasse voor alle personen (zoals Gasten en Schoonmakers) binnen de simulatie.
@@ -41,9 +42,9 @@ public abstract class Persoon implements TickListener {
      * STRATEGY PATTERN: Voert de beweging uit gebaseerd op de actieve strategie.
      * De Persoon weet zelf niet HOE hij loopt, dat bepaalt het strategie-object.
      */
-    public void performMovement() {
+    public void performMovement(MovementData data) {
         if (movementContext != null) {
-            movementContext.beweeg(this);   // SS0.6: Persoon delegeert beweging naar de context — weet zelf niet HOE er gelopen wordt
+            movementContext.beweeg(this, data);   // context kiest de juiste strategie
         }
     }
 
@@ -52,7 +53,7 @@ public abstract class Persoon implements TickListener {
      * De context start standaard met de normale strategie.
      */
     public void setMovementStrategies(IMovementStrategy normal, IMovementStrategy evacuation) {
-        this.movementContext = new MovementContext(normal, evacuation); // SS0.A/B/C: strategy-injectie — concrete algoritmes komen van buitenaf
+        this.movementContext = new MovementContext(normal, evacuation);
     }
 
     /**

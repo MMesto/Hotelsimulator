@@ -5,6 +5,7 @@ import model.*;
 import hotelevents.HotelEventType;
 import model.strategy.GastNormalStrategy;
 import model.strategy.EvacuationMovement;
+import model.strategy.MovementData;
 import java.awt.Color;
 import java.util.Random;
 
@@ -21,6 +22,9 @@ public class Gast extends Persoon {
     private Hotel hotel;
     private Lift lift;
     private IEventBus eventBus;
+    private String preferredRoomType = "Standaard";
+    private double liftWaitX = LIFT_WAIT_X;
+    private double trapX = TRAP_X;
     private boolean inLift = false;
     private boolean usesTrap = false;
     private Kamer huidigKamer;
@@ -53,7 +57,7 @@ public class Gast extends Persoon {
         this.kleur = new Color(RANDOM.nextInt(256), RANDOM.nextInt(256), RANDOM.nextInt(256));
 
         // STRATEGY PATTERN: Injecteer normale + evacuatie-strategie in de context
-        setMovementStrategies(new GastNormalStrategy(), new EvacuationMovement()); // SS0.A: injectie normale + evacuatie-strategie
+        setMovementStrategies(new GastNormalStrategy(), new EvacuationMovement());
     }
 
     @Override
@@ -62,12 +66,12 @@ public class Gast extends Persoon {
         if (godzillaTicksRemaining > 0) godzillaTicksRemaining--;
 
         // 2. Bepaal of we van strategie moeten wisselen wegens noodsituaties
-        if (fireAlarmActive && !isEvacuating()) { // SS0.2: brandalarm actief en nog niet aan het evacueren?
+        if (fireAlarmActive && !isEvacuating()) {
             startEvacuatie();
-            useEvacuationStrategy(); // SS0.3 + SS4.2: WISSEL — context zet currentStrategy = evacuationStrategy
+            useEvacuationStrategy();
         }
         else if (!fireAlarmActive && isEvacuatieBegonnen()) {
-            resetNaEvacuatie(); // SS0.4: alarm voorbij → reset + terug naar normale strategy
+            resetNaEvacuatie();
         }
 
         if (fireAlarmActive && state == State.BUITEN) {
@@ -76,7 +80,7 @@ public class Gast extends Persoon {
         }
 
         // 3. STRATEGY PATTERN: Voer het algoritme uit!
-        performMovement(); // SS0.5: voer de ACTIEVE strategie uit (welke dat is, weet de Gast niet)
+        performMovement(createMovementData());
 
         // 4. Update visuele state
         updateLoungeStayTicks();
@@ -127,6 +131,13 @@ public class Gast extends Persoon {
         this.faciliteitsBezoekDuur = RESTAURANT_WACHT_TICKS;
     }
 
+    public void gaNaarFaciliteitDoorEvent(String type, double fX, double fY) {
+        startFaciliteitBezoek(type, fX, fY);
+        if ("Restaurant".equalsIgnoreCase(type)) {
+            this.faciliteitsBezoekDuur = RESTAURANT_WACHT_TICKS;
+        }
+    }
+
     private void startFaciliteitBezoek(String type, double fX, double fY) {
         this.huidigerFaciliteitType = type;
         this.faciliteitX = fX;
@@ -163,8 +174,13 @@ public class Gast extends Persoon {
     private void wisselVerdiepingVoor(State vervolgState) {
         this.stateNaVerdiepingWissel = vervolgState;
         this.usesTrap = RANDOM.nextBoolean();
-        this.destX = usesTrap ? TRAP_X : LIFT_WAIT_X;
+        this.destX = usesTrap ? trapX : liftWaitX;
         this.state = State.NAAR_LIFT_WACHTEN;
+    }
+
+    private MovementData createMovementData() {
+        return new MovementData(hotel, lift, eventBus, maxX, maxY,
+                liftWaitX, trapX, 0, 0);
     }
 
     public boolean isGodzillaActive() {
@@ -278,6 +294,16 @@ public class Gast extends Persoon {
     public void setLift(Lift lift) { this.lift = lift; }
     public void setHotel(Hotel hotel) { this.hotel = hotel; }
     public void setEventBus(IEventBus eventBus) { this.eventBus = eventBus; }
+    public String getPreferredRoomType() { return preferredRoomType; }
+    public void setPreferredRoomType(String preferredRoomType) {
+        if (preferredRoomType != null && !preferredRoomType.isBlank()) {
+            this.preferredRoomType = preferredRoomType;
+        }
+    }
+    public void setTransportPoints(double liftWaitX, double trapX) {
+        this.liftWaitX = liftWaitX;
+        this.trapX = trapX;
+    }
     public Color getKleur() { return kleur; }
     public Kamer getHuidigKamer() { return huidigKamer; }
 }

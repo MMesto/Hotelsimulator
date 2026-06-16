@@ -28,18 +28,18 @@ public class MovementContext {
         this.currentStrategy = normalStrategy; // Zet de actieve strategy terug naar normaal.
     } // Einde setStrategies.
 
-    public void beweeg(Persoon persoon) { // Enige methode waarmee de context beweging uitvoert.
+    public void beweeg(Persoon persoon, MovementData data) { // Enige methode waarmee de context beweging uitvoert.
         if (currentStrategy != null) { // Controleer of er een actieve strategy is.
-            currentStrategy.beweeg(persoon); // SS0.7 + SS4.4: POLYMORFISME — Java kiest op runtime de juiste concrete beweeg().
+            currentStrategy.beweeg(persoon, data); // Polymorfisme: Java kiest de juiste concrete beweeg-methode.
         }
     }
 
-    public void useNormalStrategy() { // SS4.6: Wissel terug naar normaal gedrag (alarm voorbij).
+    public void useNormalStrategy() { // Wissel naar normaal gedrag.
         this.currentStrategy = normalStrategy; // Maak de normale strategy actief.
     }
 
     public void useEvacuationStrategy() { // Wissel naar evacuatiegedrag.
-        this.currentStrategy = evacuationStrategy; // SS4.3: DE HELE WISSEL — alleen deze referentie wordt omgezet.
+        this.currentStrategy = evacuationStrategy; // Maak de evacuatie-strategy actief.
     }
 
     public boolean isUsingEvacuationStrategy() { // Check of evacuatiegedrag nu actief is.

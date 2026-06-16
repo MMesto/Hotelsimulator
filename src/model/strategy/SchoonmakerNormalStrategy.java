@@ -9,64 +9,64 @@ import model.Area;
 public class SchoonmakerNormalStrategy implements IMovementStrategy {
 
     @Override
-    public void beweeg(Persoon persoon) {
-        if (!(persoon instanceof Schoonmaker)) return; // SS2.1: type-check — alleen schoonmakers
+    public void beweeg(Persoon persoon, MovementData data) {
+        if (!(persoon instanceof Schoonmaker)) return;
         Schoonmaker sm = (Schoonmaker) persoon;
 
-        if (sm.isInLift()) { // SS2.2: in de lift? → liftlogica en klaar voor deze tick
-            handleLiftMovement(sm);
+        if (sm.isInLift()) {
+            handleLiftMovement(sm, data);
             return;
         }
 
-        Kamer viezeKamer = sm.zoekViezeKamer(); // SS2.3: zoek een kamer met status SCHOONMAKEN
+        Kamer viezeKamer = sm.zoekViezeKamer();
 
-        if (viezeKamer == null) { // SS2.4: geen werk → reset state en loop terug naar de opslag (7.5, 5.5)
+        if (viezeKamer == null) {
             if (sm.getState() == Schoonmaker.State.NAAR_DOEL) {
                 sm.setState(Schoonmaker.State.VRIJ);
                 sm.setHuidigKamer(null);
             }
 
-            // Loop rustig terug naar de opslag op (7.5, 5.5)
-            if (Math.abs(sm.getX() - 7.5) > 0.1) {
-                sm.setX(sm.getX() + (sm.getX() < 7.5 ? Schoonmaker.SPEED : -Schoonmaker.SPEED));
-            } else if (Math.abs(sm.getY() - 5.5) > 0.1) {
-                sm.setY(sm.getY() + (sm.getY() < 5.5 ? Schoonmaker.SPEED : -Schoonmaker.SPEED));
+            // Opslagpositie komt uit de layout via MovementData.
+            if (Math.abs(sm.getX() - data.getStorageX()) > 0.1) {
+                sm.setX(sm.getX() + (sm.getX() < data.getStorageX() ? Schoonmaker.SPEED : -Schoonmaker.SPEED));
+            } else if (Math.abs(sm.getY() - data.getStorageY()) > 0.1) {
+                sm.setY(sm.getY() + (sm.getY() < data.getStorageY() ? Schoonmaker.SPEED : -Schoonmaker.SPEED));
             } else {
                 sm.setState(Schoonmaker.State.VRIJ);
             }
             return;
         }
 
-        double targetX = getAreaCenterX(viezeKamer.getArea()); // SS2.5: doel = midden van de kamer-Area
+        double targetX = getAreaCenterX(viezeKamer.getArea());
         double targetY = getAreaCenterY(viezeKamer.getArea());
 
         if (sm.getState() == Schoonmaker.State.SCHOONMAKEN) {
-            werkAanKamer(sm); // SS2.6: timer aftellen; op 0 → kamer VRIJ + schoonmaker VRIJ
+            werkAanKamer(sm);
         } else {
-            beweegNaarKamer(sm, targetX, targetY, viezeKamer); // SS2.7: naar de kamer lopen (zie a t/m d hieronder)
+            beweegNaarKamer(sm, targetX, targetY, viezeKamer, data);
         }
     }
 
-    private void beweegNaarKamer(Schoonmaker sm, double tx, double ty, Kamer doelKamer) {
-        if (doelKamer.getStatus() != Kamer.KamerStatus.SCHOONMAKEN) { // SS2.7a: guard — collega was sneller? → VRIJ en stop
+    private void beweegNaarKamer(Schoonmaker sm, double tx, double ty, Kamer doelKamer, MovementData data) {
+        if (doelKamer.getStatus() != Kamer.KamerStatus.SCHOONMAKEN) {
             sm.setState(Schoonmaker.State.VRIJ);
             sm.setHuidigKamer(null);
             return;
         }
 
-        if ((int)sm.getY() != (int)ty) { // SS2.7b: verkeerde verdieping → naar LIFT_X lopen en lift instappen
-            if (Math.abs(sm.getX() - Schoonmaker.LIFT_X) > 0.1) {
-                sm.setX(sm.getX() + (sm.getX() < Schoonmaker.LIFT_X ? Schoonmaker.SPEED : -Schoonmaker.SPEED));
+        if ((int)sm.getY() != (int)ty) {
+            if (Math.abs(sm.getX() - data.getLiftWaitX()) > 0.1) {
+                sm.setX(sm.getX() + (sm.getX() < data.getLiftWaitX() ? Schoonmaker.SPEED : -Schoonmaker.SPEED));
             } else {
                 sm.stapInLift((int)ty);
             }
         } else {
-            if (Math.abs(sm.getX() - tx) > 0.1) { // SS2.7c: goede verdieping → loop horizontaal naar het kamercentrum
+            if (Math.abs(sm.getX() - tx) > 0.1) {
                 sm.setX(sm.getX() + (sm.getX() < tx ? Schoonmaker.SPEED : -Schoonmaker.SPEED));
             } else {
                 if (doelKamer.getStatus() == Kamer.KamerStatus.SCHOONMAKEN) {
                     sm.setHuidigKamer(doelKamer);
-                    sm.setState(Schoonmaker.State.SCHOONMAKEN); // SS2.7d: aangekomen → kamer claimen + timer + CLEANING_EMERGENCY-event
+                    sm.setState(Schoonmaker.State.SCHOONMAKEN);
                     sm.setSchoonmaakTimer(Schoonmaker.SCHOONMAAK_DUUR);
 
                     if (sm.getEventBus() != null) {
@@ -90,12 +90,13 @@ public class SchoonmakerNormalStrategy implements IMovementStrategy {
         }
     }
 
-    private void handleLiftMovement(Schoonmaker sm) {
-        sm.setX(sm.getLift().getX());
-        sm.setY(sm.getLift().getY());
+    private void handleLiftMovement(Schoonmaker sm, MovementData data) {
+        if (data.getLift() == null) return;
+        sm.setX(data.getLift().getX());
+        sm.setY(data.getLift().getY());
 
-        if ((int)sm.getLift().getY() == sm.getDoelVerdieping() && sm.getLift().isIdle()) {
-            sm.getLift().verwijderGast(sm);
+        if ((int)data.getLift().getY() == sm.getDoelVerdieping() && data.getLift().isIdle()) {
+            data.getLift().verwijderGast(sm);
             sm.setInLift(false);
             sm.setY(sm.getDoelVerdieping() + 0.5);
 

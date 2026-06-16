@@ -57,10 +57,10 @@ public class LayoutLoaderTest {
                 {"T", "G", "G"}
         };
 
-        // Act + Assert: de huidige LayoutLoader geeft alleen een waarschuwing en gooit geen Exception.
-        assertDoesNotThrow(() -> {
+        // Act + Assert: lift is verplicht.
+        assertThrows(Exception.class, () -> {
             LayoutLoader.valideerLayout(grid);
-        }, "Een layout zonder lift geeft momenteel alleen een waarschuwing.");
+        }, "Een layout zonder lift moet worden afgekeurd.");
     }
 
     @Test
@@ -72,10 +72,10 @@ public class LayoutLoaderTest {
                 {"G", "G", "G"}
         };
 
-        // Act + Assert: de huidige LayoutLoader geeft alleen een waarschuwing en gooit geen Exception.
-        assertDoesNotThrow(() -> {
+        // Act + Assert: trap is verplicht.
+        assertThrows(Exception.class, () -> {
             LayoutLoader.valideerLayout(grid);
-        }, "Een layout zonder trap geeft momenteel alleen een waarschuwing.");
+        }, "Een layout zonder trap moet worden afgekeurd.");
     }
 
     @Test

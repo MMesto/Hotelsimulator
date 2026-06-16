@@ -4,14 +4,20 @@ import model.*;
 import model.personen.*;
 import javax.swing.*;
 import javax.swing.WindowConstants;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 import java.awt.Color;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.io.File;
+import java.io.FilenameFilter;
 import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 
 public class Main {
 
@@ -19,7 +25,9 @@ public class Main {
     private static JComboBox<String> layoutDropdown;
     private static JLabel statusLabel;
     private static JLabel timestepLabel;
+    private static JLabel speedLabel;
     private static JButton startPauseButton;
+    private static JSlider speedSlider;
     private static Simulator simulator;
     private static Timer simulationTimer;
     private static GuestListWindow guestListWindow;
@@ -29,99 +37,97 @@ public class Main {
     private static final Map<Persoon, PersonDetailWindow> personWindows = new HashMap<>();
 
     public static void main(String[] args) {
-        SwingUtilities.invokeLater(() -> {
+        SwingUtilities.invokeLater(new StartApplicationTask());
+    }
+
+    private static void startApplication() {
             try {
                 JFrame frame = new JFrame("Hotel Simulator");
                 frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
 
-                // --- UI SETUP ---
-                JPanel controlPanel = new JPanel();
-                String[] layouts = getAvailableLayouts();
-                layoutDropdown = new JComboBox<>(layouts);
-
-                JButton loadButton = new JButton("Laden");
-                loadButton.addActionListener(_ -> loadLayout());
-
-                startPauseButton = new JButton("Start");
-                startPauseButton.addActionListener(_ -> toggleSimulation());
-
-                // --- FIRE ALARM BUTTONS ---
-                JButton fireAlarmButton = new JButton("🔥 BRANDALARM");
-                styleAlarmButton(fireAlarmButton, new Color(255, 90, 90));
-                fireAlarmButton.addActionListener(_ -> triggerFireAlarm());
-
-                JButton clearAlarmButton = new JButton("✓ All Clear");
-                styleAlarmButton(clearAlarmButton, new Color(120, 230, 120));
-                clearAlarmButton.addActionListener(_ -> clearFireAlarm());
-
-                JLabel speedLabel = new JLabel("Tick Interval: 100ms");
-                JSlider speedSlider = new JSlider(50, 1000, 100);
-                speedSlider.addChangeListener(_ -> {
-                    int val = speedSlider.getValue();
-                    if (simulator != null) simulator.getClock().setTickInterval(val);
-                    speedLabel.setText("Tick Interval: " + val + "ms");
-                });
-
-                statusLabel = new JLabel("Hotel laden...");
-                timestepLabel = new JLabel("Timestep: 0");
-
-                controlPanel.add(new JLabel("Layout: "));
-                controlPanel.add(layoutDropdown);
-                controlPanel.add(loadButton);
-                controlPanel.add(startPauseButton);
-                controlPanel.add(fireAlarmButton);
-                controlPanel.add(clearAlarmButton);
-                controlPanel.add(speedLabel);
-                controlPanel.add(speedSlider);
-                controlPanel.add(statusLabel);
-                controlPanel.add(timestepLabel);
-
-                // --- INITIALISATIE DATA ---
-                Hotel hotel = LayoutLoader.laadLayout("layouts/" + layouts[0]);
-                initializeKamers(hotel);
-                addTestGuests(hotel);
-                addSchoonmakers(hotel);
-
-                hotelPanel = new HotelPanel(hotel);
-                simulator = new Simulator(hotel, hotelPanel);
-                hotelPanel.setEventBus(simulator.getEventBus());
-
-                // ============================================================
-                // ✨ ACTIVATIE US4.1: EXTERNE DLL EVENTS IN DE ECHTE APP ✨
-                // ============================================================
-                System.out.println("\n🚀 [Main] US4.1 Activeren: Externe DLL Provider koppelen...");
-
-                // We pakken de EventBus van de simulator en gieten deze om naar de bruikbare EventBusImpl
-                if (simulator.getEventBus() instanceof EventBusImpl) {
-                    EventBusImpl eventBusImpl = (EventBusImpl) simulator.getEventBus();
-
-                    // Maak de DLL provider aan en start de event-sequentie direct op de achtergrond!
-                    ExternalEventProvider provider = new ExternalEventProvider(eventBusImpl);
-                    provider.start();
-                }
-                // ============================================================
-
-                if (simulator.getLift() != null) {
-                    hotelPanel.setLift(simulator.getLift());
-                }
-
-                setupHotelPanelCallbacks(hotel, hotelPanel);
-
-                frame.add(controlPanel, "North");
-                frame.add(hotelPanel, "Center");
-                frame.pack();
-                frame.setLocationRelativeTo(null);
-                frame.setVisible(true);
-
-                // --- MAIN LOOP ---
-                simulationTimer = new Timer(50, _ -> runTick());
-                simulationTimer.start();
+                JPanel controlPanel = createControlPanel();
+                Hotel hotel = loadInitialHotel();
+                setupSimulator(hotel);
+                startExternalEvents();
+                showFrame(frame, controlPanel);
+                startTimer();
 
             } catch (Exception e) {
                 System.err.println("Error initializing simulator: " + e.getMessage());
                 e.printStackTrace();
             }
-        });
+    }
+
+    private static JPanel createControlPanel() {
+        JPanel panel = new JPanel();
+
+        layoutDropdown = new JComboBox<>(getAvailableLayouts());
+        startPauseButton = createButton("Start", "toggle");
+        speedLabel = new JLabel("Tick Interval: 100ms");
+        speedSlider = new JSlider(50, 1000, 100);
+        speedSlider.addChangeListener(new SpeedSliderAction());
+        statusLabel = new JLabel("Hotel laden...");
+        timestepLabel = new JLabel("Timestep: 0");
+
+        JButton fireAlarmButton = createButton("🔥 BRANDALARM", "fire");
+        JButton clearAlarmButton = createButton("✓ All Clear", "clear");
+        styleAlarmButton(fireAlarmButton, new Color(255, 90, 90));
+        styleAlarmButton(clearAlarmButton, new Color(120, 230, 120));
+
+        panel.add(new JLabel("Layout: "));
+        panel.add(layoutDropdown);
+        panel.add(createButton("Laden", "load"));
+        panel.add(startPauseButton);
+        panel.add(fireAlarmButton);
+        panel.add(clearAlarmButton);
+        panel.add(speedLabel);
+        panel.add(speedSlider);
+        panel.add(statusLabel);
+        panel.add(timestepLabel);
+        return panel;
+    }
+
+    private static JButton createButton(String text, String action) {
+        JButton button = new JButton(text);
+        button.addActionListener(new ButtonAction(action));
+        return button;
+    }
+
+    private static Hotel loadInitialHotel() throws Exception {
+        String eersteLayout = (String) layoutDropdown.getItemAt(0);
+        Hotel hotel = LayoutLoader.laadLayout("layouts/" + eersteLayout);
+        initializeKamers(hotel);
+        addTestGuests(hotel);
+        addSchoonmakers(hotel);
+        return hotel;
+    }
+
+    private static void setupSimulator(Hotel hotel) {
+        hotelPanel = new HotelPanel(hotel);
+        simulator = new Simulator(hotel, hotelPanel);
+        hotelPanel.setEventBus(simulator.getEventBus());
+        if (simulator.getLift() != null) hotelPanel.setLift(simulator.getLift());
+        setupHotelPanelCallbacks(hotel, hotelPanel);
+    }
+
+    private static void startExternalEvents() {
+        System.out.println("\n🚀 [Main] US4.1 Activeren: Externe DLL Provider koppelen...");
+        EventBusImpl eventBus = simulator.getEventBus();
+        ExternalEventProvider provider = new ExternalEventProvider(eventBus);
+        provider.start();
+    }
+
+    private static void showFrame(JFrame frame, JPanel controlPanel) {
+        frame.add(controlPanel, "North");
+        frame.add(hotelPanel, "Center");
+        frame.pack();
+        frame.setLocationRelativeTo(null);
+        frame.setVisible(true);
+    }
+
+    private static void startTimer() {
+        simulationTimer = new Timer(50, new TimerAction());
+        simulationTimer.start();
     }
 
     private static void runTick() {
@@ -182,9 +188,7 @@ public class Main {
         for (Area a : hotel.getAreas()) {
             if ("Room".equals(a.getAreaType())) roomAreas.add(a);
         }
-        roomAreas.sort(Comparator
-                .comparingInt(Area::getY)
-                .thenComparingInt(Area::getX));
+        roomAreas.sort(new AreaPositionComparator());
 
         int huidigeVerdieping = -1;
         int kamerIndex = 0;
@@ -242,7 +246,7 @@ public class Main {
 
     private static String[] getAvailableLayouts() {
         File dir = new File("layouts");
-        String[] files = dir.list((_ , n) -> n.endsWith(".json"));
+        String[] files = dir.list(new JsonLayoutFilter());
         if (files != null) Arrays.sort(files);
         return (files != null) ? files : new String[0];
     }
@@ -310,8 +314,91 @@ public class Main {
     }
 
     private static void setupHotelPanelCallbacks(Hotel hotel, HotelPanel panel) {
-        panel.setOnLobbyClick(() -> openGuestListWindow(hotel));
-        panel.setOnRoomClick(Main::openRoomDetailWindow);
-        panel.setOnPersonClick(Main::openPersonDetailWindow);
+        panel.setOnLobbyClick(new LobbyClickAction(hotel));
+        panel.setOnRoomClick(new RoomClickAction());
+        panel.setOnPersonClick(new PersonClickAction());
+    }
+
+    private static class StartApplicationTask implements Runnable {
+        @Override
+        public void run() {
+            startApplication();
+        }
+    }
+
+    private static class ButtonAction implements ActionListener {
+        private final String action;
+
+        public ButtonAction(String action) {
+            this.action = action;
+        }
+
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            if ("load".equals(action)) loadLayout();
+            if ("toggle".equals(action)) toggleSimulation();
+            if ("fire".equals(action)) triggerFireAlarm();
+            if ("clear".equals(action)) clearFireAlarm();
+        }
+    }
+
+    private static class TimerAction implements ActionListener {
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            runTick();
+        }
+    }
+
+    private static class SpeedSliderAction implements ChangeListener {
+        @Override
+        public void stateChanged(ChangeEvent e) {
+            int val = speedSlider.getValue();
+            if (simulator != null) simulator.getClock().setTickInterval(val);
+            speedLabel.setText("Tick Interval: " + val + "ms");
+        }
+    }
+
+    private static class AreaPositionComparator implements Comparator<Area> {
+        @Override
+        public int compare(Area a1, Area a2) {
+            if (a1.getY() != a2.getY()) {
+                return a1.getY() - a2.getY();
+            }
+            return a1.getX() - a2.getX();
+        }
+    }
+
+    private static class JsonLayoutFilter implements FilenameFilter {
+        @Override
+        public boolean accept(File dir, String name) {
+            return name.endsWith(".json");
+        }
+    }
+
+    private static class LobbyClickAction implements Runnable {
+        private final Hotel hotel;
+
+        public LobbyClickAction(Hotel hotel) {
+            this.hotel = hotel;
+        }
+
+        @Override
+        public void run() {
+            openGuestListWindow(hotel);
+        }
+    }
+
+    private static class RoomClickAction implements Consumer<Kamer> {
+        @Override
+        public void accept(Kamer kamer) {
+            openRoomDetailWindow(kamer);
+        }
+    }
+
+    private static class PersonClickAction implements Consumer<Persoon> {
+        @Override
+        public void accept(Persoon persoon) {
+            openPersonDetailWindow(persoon);
+        }
     }
 }

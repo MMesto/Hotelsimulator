@@ -18,6 +18,7 @@ public class Area {
         LIFT      ("Lift",       "Lift",       new Color(255, 150,   0)),
         STAIRCASE ("Staircase",  "Trap",       new Color(100, 200, 100)),
         STORAGE   ("Storage",    "Opslag",     new Color(180, 140, 100)),
+        LOUNGE    ("Lounge",     "Lounge",     new Color(230, 210, 150)),
         UNKNOWN   ("",           "",           Color.WHITE);
 
         private final String jsonKey;
@@ -34,6 +35,7 @@ public class Area {
         public Color getColor() { return color; }
 
         public static Type fromString(String key) {
+            if ("Opslag".equalsIgnoreCase(key)) return STORAGE;
             for (Type type : values()) {
                 if (type.jsonKey.equalsIgnoreCase(key)) return type;
             }

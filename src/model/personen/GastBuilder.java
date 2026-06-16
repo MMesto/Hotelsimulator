@@ -17,6 +17,7 @@ public class GastBuilder {
     private Hotel hotel;        // het hotel waarin de gast leeft (verplicht)
     private Lift lift;          // de lift die de gast mag gebruiken
     private IEventBus eventBus; // interface-type, niet de concrete EventBusImpl (Dependency Inversion)
+    private String preferredRoomType = "Standaard";
     private double startX;      // start-x op het grid
     private double startY;      // start-y op het grid
     private int maxX;           // breedte van het grid (rechtergrens)
@@ -28,6 +29,7 @@ public class GastBuilder {
     public GastBuilder hotel(Hotel hotel)           { this.hotel = hotel;   return this; }
     public GastBuilder lift(Lift lift)              { this.lift = lift;     return this; }
     public GastBuilder eventBus(IEventBus eventBus) { this.eventBus = eventBus; return this; }
+    public GastBuilder preferredRoomType(String type) { this.preferredRoomType = type; return this; }
     public GastBuilder startPos(double x, double y) { this.startX = x; this.startY = y; return this; }
     public GastBuilder gridBounds(int w, int h)     { this.maxX = w; this.maxY = h; return this; }
 
@@ -45,6 +47,7 @@ public class GastBuilder {
         g.setLift(lift);                  // koppel de lift
         g.setEventBus(eventBus);          // koppel de eventbus
         g.setGridBounds(maxX, maxY);      // stel de grid-grenzen in
+        g.setPreferredRoomType(preferredRoomType);
         g.setStartPositie(startX, startY);// zet de startpositie
         return g;                         // geef de volledig opgebouwde gast terug
     }

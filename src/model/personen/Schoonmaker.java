@@ -5,6 +5,7 @@ import model.*;
 import hotelevents.HotelEventType;
 import model.strategy.SchoonmakerNormalStrategy;
 import model.strategy.EvacuationMovement;
+import model.strategy.MovementData;
 import java.awt.Color;
 
 public class Schoonmaker extends Persoon {
@@ -20,6 +21,10 @@ public class Schoonmaker extends Persoon {
     private boolean inLift = false;
     private int doelVerdieping;
     private int maxY = 6;
+    private double storageX = 7.5;
+    private double storageY = 5.5;
+    private double liftWaitX = LIFT_X;
+    private double trapX = 8.5;
 
     public enum State { VRIJ, NAAR_DOEL, SCHOONMAKEN, IN_LIFT, EVACUATIE, BUITEN }
     private State state = State.VRIJ;
@@ -34,7 +39,7 @@ public class Schoonmaker extends Persoon {
         this.destY = 5.5;
 
         // STRATEGY PATTERN: Injecteer normale + evacuatie-strategie in de context
-        setMovementStrategies(new SchoonmakerNormalStrategy(), new EvacuationMovement()); // SS0.B: injectie normale + evacuatie-strategie
+        setMovementStrategies(new SchoonmakerNormalStrategy(), new EvacuationMovement());
 
         System.out.println("[Schoonmaker] " + naam + " is in de Opslag (7,5)");
     }
@@ -44,19 +49,19 @@ public class Schoonmaker extends Persoon {
         updateActiviteitLabel();
 
         // 1. Brandalarm is geactiveerd: Wissel naar vlucht-strategie
-        if (fireAlarmActive && !isEvacuating()) { // SS0.2: brandalarm actief en nog niet aan het evacueren?
+        if (fireAlarmActive && !isEvacuating()) {
             startEvacuatie();
-            useEvacuationStrategy(); // SS0.3 + SS4.2: WISSEL naar evacuatiegedrag
+            useEvacuationStrategy();
         }
 
         // 2. Brandalarm is weer voorbij: Reset naar normaal gedrag
         if (!fireAlarmActive && isEvacuatieBegonnen()) {
             setEvacuatieBegonnen(false);
-            useNormalStrategy(); // SS0.4 + SS4.6: alarm voorbij → terug naar normaal gedrag
+            useNormalStrategy();
             this.state = State.VRIJ;
             setHuidigeActiviteit("⏳ Idle");
-            this.x = 7.5; // Terug naar opslag
-            this.y = 5.5;
+            this.x = storageX; // Terug naar opslag
+            this.y = storageY;
         }
 
         if (fireAlarmActive && state == State.BUITEN) {
@@ -64,7 +69,7 @@ public class Schoonmaker extends Persoon {
         }
 
         // 3. STRATEGY PATTERN: Voer de actieve strategie uit!
-        performMovement(); // SS0.5: voer de ACTIEVE strategie uit
+        performMovement(createMovementData());
     }
 
     private void updateActiviteitLabel() {
@@ -133,10 +138,23 @@ public class Schoonmaker extends Persoon {
     public void setStateToLeft() { this.setState(State.BUITEN); } //polymorfisme
     public IEventBus getEventBus() { return eventBus; }
 
+    private MovementData createMovementData() {
+        return new MovementData(hotel, lift, eventBus, 0, maxY,
+                liftWaitX, trapX, storageX, storageY);
+    }
+
     // Initialisatie setters
     public void setHotel(Hotel h) { this.hotel = h; }
     public void setLift(Lift l) { this.lift = l; }
     public void setEventBus(EventBusImpl eventBus) { this.eventBus = eventBus; }
     public void setGridBounds(int mx, int my) { this.maxY = my; }
+    public void setStoragePosition(double x, double y) {
+        this.storageX = x;
+        this.storageY = y;
+    }
+    public void setTransportPoints(double liftWaitX, double trapX) {
+        this.liftWaitX = liftWaitX;
+        this.trapX = trapX;
+    }
     public Color getKleur() { return Color.GRAY; }
 }

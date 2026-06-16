@@ -11,37 +11,37 @@ public class GastNormalStrategy implements IMovementStrategy {
     private static final double RECHTER_MARGE = 1.5;
 
     @Override
-    public void beweeg(Persoon persoon) {
-        if (!(persoon instanceof Gast)) return; // SS1.1: type-check — deze strategy werkt alleen op gasten
+    public void beweeg(Persoon persoon, MovementData data) {
+        if (!(persoon instanceof Gast)) return;
         Gast gast = (Gast) persoon;
 
-        if (gast.isInLift()) { // SS1.2: in de lift? → liftlogica en klaar voor deze tick
-            handleLiftLogic(gast);
+        if (gast.isInLift()) {
+            handleLiftLogic(gast, data);
             return;
         }
 
-        switch (gast.getGastState()) { // SS1.3: state machine — kies het deelalgoritme op basis van de state
-            case WANDELEN -> randomWalk(gast); // SS1.4: random links/rechts wandelen (40/40/20), 2% kans op verdiepingswissel
-            case NAAR_LIFT_WACHTEN -> beweegNaarLiftTrap(gast); // SS1.5: loop naar TRAP_X of LIFT_WAIT_X → dan WACHTEN_OP_VERVOER
-            case WACHTEN_OP_VERVOER -> wachtOpVervoer(gast); // SS1.6: trap → meteen verdieping wisselen; lift → instappen als idle
-            case GAAT_NAAR_FACILITEIT -> beweegNaarFaciliteit(gast); // SS1.7: loop naar faciliteitX → IN_FACILITEIT + duur 20-50 ticks
-            case IN_FACILITEIT -> zitInFaciliteit(gast); // SS1.8: duur aftellen → daarna naar kamer of WANDELEN
-            case GAAT_NAAR_KAMER -> beweegNaarKamer(gast); // SS1.9: eerst juiste verdieping, dan naar destX → WANDELEN + roomStayTimer
-            case GAAT_NAAR_LOBBY -> beweegNaarLobby(gast); // SS1.10: naar lobbyverdieping → naar LOBBY_X → VERLAAT_HOTEL
-            case VERLAAT_HOTEL -> beweegNaarExit(gast); // SS1.11: elke tick x - speed → loopt links het scherm uit
-            case EVACUATIE -> { /* SS1.12: leeg — wordt afgehandeld door EvacuationMovement */ }
-            case BUITEN -> { /* SS1.13: leeg — veilig buiten, blijf staan */ }
-            case IN_LIFT -> { /* SS1.14: leeg — al afgevangen bij SS1.2 */ }
+        switch (gast.getGastState()) {
+            case WANDELEN -> randomWalk(gast);
+            case NAAR_LIFT_WACHTEN -> beweegNaarLiftTrap(gast, data);
+            case WACHTEN_OP_VERVOER -> wachtOpVervoer(gast, data);
+            case GAAT_NAAR_FACILITEIT -> beweegNaarFaciliteit(gast);
+            case IN_FACILITEIT -> zitInFaciliteit(gast);
+            case GAAT_NAAR_KAMER -> beweegNaarKamer(gast);
+            case GAAT_NAAR_LOBBY -> beweegNaarLobby(gast);
+            case VERLAAT_HOTEL -> beweegNaarExit(gast);
+            case EVACUATIE -> { /* Wordt afgehandeld door EvacuationMovement */ }
+            case BUITEN -> { /* Veilig buiten: blijf staan. */ }
+            case IN_LIFT -> { /* Wordt bovenaan afgevangen */ }
         }
     }
 
-    private void handleLiftLogic(Gast gast) {
-        if (gast.getLift() != null) {
-            gast.setX(gast.getLift().getX());
-            gast.setY(gast.getLift().getY());
+    private void handleLiftLogic(Gast gast, MovementData data) {
+        if (data.getLift() != null) {
+            gast.setX(data.getLift().getX());
+            gast.setY(data.getLift().getY());
 
-            if ((int)gast.getLift().getY() == gast.getDoelVerdieping() && gast.getLift().isIdle()) {
-                gast.getLift().verwijderGast(gast);
+            if ((int)data.getLift().getY() == gast.getDoelVerdieping() && data.getLift().isIdle()) {
+                data.getLift().verwijderGast(gast);
                 gast.setInLift(false);
                 gast.setY(gast.getDoelVerdieping() + 0.5);
                 gast.hervatStateNaVerdiepingWissel();
@@ -78,10 +78,10 @@ public class GastNormalStrategy implements IMovementStrategy {
         if (RANDOM.nextDouble() < 0.02) gast.wiltVerdiepingWisselen();
     }
 
-    private void beweegNaarLiftTrap(Gast gast) {
+    private void beweegNaarLiftTrap(Gast gast, MovementData data) {
         double speed = gast.getActueleSnelheid();
-        // Bepaal richting naar het lift/trap wachtpunt (TRAP_X of LIFT_WAIT_X)
-        double doeltargetX = gast.isUsesTrap() ? Gast.TRAP_X : Gast.LIFT_WAIT_X;
+        // De strategy krijgt lift/trap-posities via MovementData, niet via vaste literals.
+        double doeltargetX = gast.isUsesTrap() ? data.getTrapX() : data.getLiftWaitX();
         double dx = doeltargetX - gast.getX();
 
         if (Math.abs(dx) < speed) {
@@ -92,24 +92,24 @@ public class GastNormalStrategy implements IMovementStrategy {
         }
     }
 
-    private void wachtOpVervoer(Gast gast) {
+    private void wachtOpVervoer(Gast gast, MovementData data) {
         if (gast.isUsesTrap()) {
-            int direction = bepaalTrapRichting(gast);
+            int direction = bepaalTrapRichting(gast, data);
             gast.setY(((int)gast.getY() + direction) + 0.5);
             gast.hervatStateNaVerdiepingWissel();
-        } else if (gast.getLift() != null && Math.abs(gast.getLift().getY() - gast.getY()) < 1.0 && gast.getLift().isIdle()) {
+        } else if (data.getLift() != null && Math.abs(data.getLift().getY() - gast.getY()) < 1.0 && data.getLift().isIdle()) {
             int nieuwDoel;
             if (gast.getStateNaVerdiepingWissel() != Gast.State.WANDELEN) {
                 nieuwDoel = gast.getDoelVerdieping();
             } else {
-                nieuwDoel = RANDOM.nextInt(gast.getMaxY());
+                nieuwDoel = RANDOM.nextInt(data.getMaxY());
                 if (nieuwDoel == (int)gast.getY()) {
-                    nieuwDoel = (nieuwDoel + 1) % gast.getMaxY();
+                    nieuwDoel = (nieuwDoel + 1) % data.getMaxY();
                 }
             }
             gast.setDoelVerdieping(nieuwDoel);
 
-            if (gast.getLift().voegGastToe(gast, gast.getDoelVerdieping())) {
+            if (data.getLift().voegGastToe(gast, gast.getDoelVerdieping())) {
                 gast.setInLift(true);
                 gast.setGastState(Gast.State.IN_LIFT);
             }
@@ -203,10 +203,10 @@ public class GastNormalStrategy implements IMovementStrategy {
         return Math.max(RAND_MARGE, Math.min(gast.getMaxX() - RECHTER_MARGE, targetX));
     }
 
-    private int bepaalTrapRichting(Gast gast) {
+    private int bepaalTrapRichting(Gast gast, MovementData data) {
         if (gast.getStateNaVerdiepingWissel() != Gast.State.WANDELEN) {
             return gast.getDoelVerdieping() > (int) gast.getY() ? 1 : -1;
         }
-        return (gast.getY() >= gast.getMaxY() - 1) ? -1 : (gast.getY() <= 1 ? 1 : (RANDOM.nextBoolean() ? 1 : -1));
+        return (gast.getY() >= data.getMaxY() - 1) ? -1 : (gast.getY() <= 1 ? 1 : (RANDOM.nextBoolean() ? 1 : -1));
     }
 }
